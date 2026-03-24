@@ -72,14 +72,8 @@ jobs:
           else
             echo "source.csv not found"
           fi
-          echo ""
-          echo "Preview of news_monitor.log:"
-          if [ -f news_monitor.log ]; then
-            tail -n 50 news_monitor.log
-          else
-            echo "news_monitor.log not found"
-          fi
 
+      # ✅ ROBUST PUSH (retry + rebase)
       - name: Commit and push results
         shell: bash
         run: |
@@ -88,9 +82,29 @@ jobs:
 
           git add source.csv news_monitor.log
 
-          git diff --cached --quiet || git commit -m "Auto-update news monitoring output"
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
 
-          git push
+          git commit -m "Auto-update news monitoring output"
+
+          for i in 1 2 3; do
+            echo "Push attempt $i..."
+
+            git pull --rebase origin main || true
+
+            if git push; then
+              echo "Push succeeded"
+              exit 0
+            fi
+
+            echo "Push failed, retrying in 10s..."
+            sleep 10
+          done
+
+          echo "Push failed after retries"
+          exit 1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
