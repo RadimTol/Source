@@ -5,6 +5,15 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      date_from:
+        description: 'Pocatecni datum YYYY-MM-DD (volitelne pro manualni beh)'
+        required: false
+        type: string
+      date_to:
+        description: 'Koncove datum YYYY-MM-DD (volitelne pro manualni beh)'
+        required: false
+        type: string
   schedule:
     - cron: '0 * * * *'
 
@@ -52,20 +61,36 @@ jobs:
             "readr","tibble","xml2","tidyr","rvest"
           ), repos = "https://cloud.r-project.org")'
 
+      - name: Build script arguments
+        if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
+        id: build_args
+        shell: bash
+        run: |
+          ARGS="--keywords-file keywords.txt --output-file source.csv --log-file news_monitor.log"
+
+          if [ -n "${{ inputs.date_from }}" ] && [ -n "${{ inputs.date_to }}" ]; then
+            ARGS="$ARGS --date-from ${{ inputs.date_from }} --date-to ${{ inputs.date_to }}"
+          else
+            ARGS="$ARGS --hours-back 12"
+          fi
+
+          echo "script_args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "Using arguments: $ARGS"
+
       - name: Run monitor
         if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          Rscript source.R \
-            --hours-back 12 \
-            --keywords-file keywords.txt \
-            --output-file source.csv \
-            --log-file source.log
+          Rscript source.R ${{ steps.build_args.outputs.script_args }}
 
       - name: Show generated files
         if: always()
         run: |
           echo "Files in workspace:"
           ls -la
+          echo "---- source.csv preview ----"
+          test -f source.csv && head -n 20 source.csv || true
+          echo "---- news_monitor.log preview ----"
+          test -f news_monitor.log && tail -n 50 news_monitor.log || true
 
       - name: Commit and push results
         if: (steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch')
@@ -73,11 +98,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add source.csv source.log
-
+          git add source.csv news_monitor.log
           git diff --cached --quiet || git commit -m "Auto-update news monitoring output"
-
-          git push
+          git push origin main
 
       - name: Upload CSV output
         if: always()
