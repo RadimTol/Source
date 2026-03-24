@@ -55,11 +55,11 @@ jobs:
       - name: Run monitor
         if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          Rscript news_monitor_v2.R \
+          Rscript source.R \
             --hours-back 12 \
             --keywords-file keywords.txt \
             --output-file source.csv \
-            --log-file news_monitor.log
+            --log-file source.log
 
       - name: Show generated files
         if: always()
@@ -73,7 +73,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add source.csv news_monitor.log
+          git add source.csv source.log
 
           git diff --cached --quiet || git commit -m "Auto-update news monitoring output"
 
