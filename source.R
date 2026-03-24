@@ -22,6 +22,8 @@ default_keywords_file <- "keywords.txt"
 default_output_file   <- "source.csv"
 default_log_file      <- "news_monitor.log"
 
+auto_hours_back <- 12
+
 rss_feeds <- tribble(
   ~source,              ~url,
   "CT24",               "https://ct24.ceskatelevize.cz/rss/hlavni-zpravy",
@@ -29,10 +31,8 @@ rss_feeds <- tribble(
   "Novinky",            "https://www.novinky.cz/rss",
   "Seznam Zpravy",      "https://www.seznamzpravy.cz/rss",
   "Denik N",            "https://denikn.cz/feed/",
-  "BBC World",          "http://feeds.bbci.co.uk/news/world/rss.xml",
-  "Reuters World",      "https://feeds.reuters.com/Reuters/worldNews",
+  "BBC World",          "https://feeds.bbci.co.uk/news/world/rss.xml",
   "The Guardian World", "https://www.theguardian.com/world/rss",
-  "AP News",            "https://apnews.com/hub/ap-top-news?output=rss",
   "NYTimes World",      "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
 )
 
@@ -76,9 +76,9 @@ parse_args <- function(args) {
     else if (a %in% c("-h", "--help")) {
       cat(
 "Usage:
-  Rscript news_monitor_v2.R
-  Rscript news_monitor_v2.R --date-from 2026-03-20 --date-to 2026-03-24
-  Rscript news_monitor_v2.R --hours-back 12
+  Rscript source.R
+  Rscript source.R --date-from 2026-03-20 --date-to 2026-03-24
+  Rscript source.R --hours-back 12
 
 Options:
   --date-from YYYY-MM-DD   Start date (inclusive)
@@ -127,8 +127,8 @@ resolve_interval <- function(parsed_args) {
     if (d2 < d1) stop("Koncove datum nesmi byt mensi nez pocatecni datum.")
     return(list(
       mode = "date_range",
-      datetime_from = as.POSIXct(d1),
-      datetime_to = as.POSIXct(d2) + hours(23) + minutes(59) + seconds(59),
+      datetime_from = as.POSIXct(d1, tz = "UTC"),
+      datetime_to = as.POSIXct(d2, tz = "UTC") + hours(23) + minutes(59) + seconds(59),
       date_from = d1,
       date_to = d2
     ))
@@ -143,8 +143,8 @@ resolve_interval <- function(parsed_args) {
 
   list(
     mode = "date_range",
-    datetime_from = as.POSIXct(d1),
-    datetime_to = as.POSIXct(d2) + hours(23) + minutes(59) + seconds(59),
+    datetime_from = as.POSIXct(d1, tz = "UTC"),
+    datetime_to = as.POSIXct(d2, tz = "UTC") + hours(23) + minutes(59) + seconds(59),
     date_from = d1,
     date_to = d2
   )
@@ -187,8 +187,9 @@ strip_html <- function(x) {
 normalize_link <- function(x) {
   x <- trimws(x)
   x <- str_replace(x, "#.*$", "")
-  x <- str_replace(x, "\\?utm_[^=]+=[^&]+(&|$)", "?")
-  x <- str_replace_all(x, "\\?utm_[^=]+=[^&]+(&|$)", "?")
+  x <- str_replace_all(x, "([?&])utm_[^=]+=[^&]+", "\\1")
+  x <- str_replace_all(x, "[?&]{2,}", "&")
+  x <- str_replace(x, "\\?&", "?")
   x <- str_replace(x, "[?&]$", "")
   x <- str_replace(x, "\\?$", "")
   x <- str_replace(x, "/$", "")
@@ -235,17 +236,24 @@ read_keywords <- function(path) {
 }
 
 parse_pub_datetime <- function(x) {
-  suppressWarnings(lubridate::parse_date_time(
+  x <- as.character(x)
+  x[is.na(x)] <- ""
+
+  out <- suppressWarnings(lubridate::parse_date_time(
     x,
     orders = c(
-      "Ymd HMS z", "Ymd HMS",
       "a, d b Y H:M:S z", "d b Y H:M:S z",
       "a, d b Y H:M z",   "d b Y H:M z",
       "Y-m-dTH:M:S z",    "Y-m-dTH:M:S",
-      "Y-m-d H:M:S",      "Y-m-d"
+      "Y-m-d H:M:S z",    "Y-m-d H:M:S",
+      "Ymd HMS z",        "Ymd HMS",
+      "Y-m-d"
     ),
-    locale = "C"
+    locale = "C",
+    exact = FALSE
   ))
+
+  as.POSIXct(out, origin = "1970-01-01", tz = "UTC")
 }
 
 extract_article_text <- function(link) {
@@ -297,11 +305,12 @@ build_abstract <- function(summary_raw, link, max_sentences = 3, max_chars = 550
 
 fetch_feed <- function(feed_name, feed_url) {
   log_msg("INFO", sprintf("Nacitam feed: %s", feed_name))
+
   out <- tryCatch({
     df <- tidyRSS::tidyfeed(feed_url)
     if (!is.data.frame(df) || nrow(df) == 0) return(tibble())
 
-    tibble(
+    tmp <- tibble(
       source = feed_name,
       title = coalesce_cols(df, c("item_title", "title")),
       link = coalesce_cols(df, c("item_link", "link", "feed_link")),
@@ -312,15 +321,24 @@ fetch_feed <- function(feed_name, feed_url) {
         title = str_squish(strip_html(title)),
         link = str_trim(link),
         link_norm = normalize_link(link),
-        summary_raw = str_squish(summary_raw),
-        datetime = parse_pub_datetime(pub_raw),
-        date = as.Date(datetime)
+        summary_raw = str_squish(summary_raw)
       ) %>%
       filter(!is.na(link), nzchar(link))
+
+    tmp$datetime <- tryCatch(
+      parse_pub_datetime(tmp$pub_raw),
+      error = function(e) {
+        log_msg("WARN", sprintf("Datum se nepodarilo naparsovat pro feed %s: %s", feed_name, e$message))
+        rep(as.POSIXct(NA, tz = "UTC"), nrow(tmp))
+      }
+    )
+    tmp$date <- as.Date(tmp$datetime)
+    tmp
   }, error = function(e) {
     log_msg("WARN", sprintf("Preskakuji %s: %s", feed_name, e$message))
     tibble()
   })
+
   out
 }
 
@@ -350,7 +368,7 @@ match_keywords <- function(news_df, keywords_df) {
 # -----------------------------
 args <- parse_args(commandArgs(trailingOnly = TRUE))
 log_file <- args$log_file
-cat("", file = log_file, append = TRUE)
+cat("", file = log_file, append = FALSE)
 
 interval <- resolve_interval(args)
 log_msg("INFO", sprintf("Interval: %s -> %s (mode=%s)", interval$datetime_from, interval$datetime_to, interval$mode))
@@ -359,6 +377,7 @@ keywords <- read_keywords(args$keywords_file)
 log_msg("INFO", sprintf("Nacteno %d dvojic klicovych slov z %s", nrow(keywords), args$keywords_file))
 
 all_news <- purrr::map2_dfr(rss_feeds$source, rss_feeds$url, fetch_feed)
+log_msg("INFO", sprintf("Nacteno celkem %d RSS zaznamu", nrow(all_news)))
 
 if (nrow(all_news) == 0) {
   log_msg("WARN", "Nepodarilo se nacist zadna RSS data.")
