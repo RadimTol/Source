@@ -103,7 +103,9 @@ normalize_link <- function(x) {
 }
 
 escape_regex <- function(x) {
-  stringr::str_replace_all(x, "([][{}()+*^$|\\\\?.])", "\\\\\\1")
+  x <- as.character(x)
+  x[is.na(x)] <- ""
+  stringr::str_replace_all(x, "([.|()\\^{}+$*?\\[\\]\\\\])", "\\\\\\1")
 }
 
 first_sentences <- function(x, max_sentences = 3, max_chars = 550) {
@@ -167,13 +169,13 @@ parse_pub_datetime <- function(x) {
     if (!nzchar(s)) return(as.POSIXct(NA, tz = "UTC"))
 
     fmts <- c(
-      "%a, %d %b %Y %H:%M:%S %z",   # Tue, 24 Mar 2026 18:00:00 +0000
+      "%a, %d %b %Y %H:%M:%S %z",
       "%d %b %Y %H:%M:%S %z",
       "%a, %d %b %Y %H:%M %z",
       "%d %b %Y %H:%M %z",
-      "%Y-%m-%dT%H:%M:%S%z",        # 2026-03-24T18:00:00+0000
-      "%Y-%m-%dT%H:%M:%S%Ez",       # 2026-03-24T18:00:00+00:00
-      "%Y-%m-%dT%H:%M:%SZ",         # 2026-03-24T18:00:00Z
+      "%Y-%m-%dT%H:%M:%S%z",
+      "%Y-%m-%dT%H:%M:%S%Ez",
+      "%Y-%m-%dT%H:%M:%SZ",
       "%Y-%m-%d %H:%M:%S",
       "%Y-%m-%d"
     )
@@ -334,24 +336,32 @@ match_keywords <- function(news_df, keywords_df) {
   news_df %>%
     mutate(search_text = str_to_lower(paste(title, summary_raw, sep = " "))) %>%
     tidyr::crossing(keywords_df) %>%
+    rowwise() %>%
     mutate(
-      hit_cz = ifelse(
-        !is.na(keyword_cz),
-        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_cz), "\\b"), ignore_case = TRUE)),
+      hit_cz = if (!is.na(keyword_cz) && nzchar(keyword_cz)) {
+        str_detect(
+          search_text,
+          regex(paste0("\\b", escape_regex(keyword_cz), "\\b"), ignore_case = TRUE)
+        )
+      } else {
         FALSE
-      ),
-      hit_en = ifelse(
-        !is.na(keyword_en),
-        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_en), "\\b"), ignore_case = TRUE)),
+      },
+      hit_en = if (!is.na(keyword_en) && nzchar(keyword_en)) {
+        str_detect(
+          search_text,
+          regex(paste0("\\b", escape_regex(keyword_en), "\\b"), ignore_case = TRUE)
+        )
+      } else {
         FALSE
-      )
+      }
     ) %>%
+    ungroup() %>%
     filter(hit_cz | hit_en) %>%
     mutate(
       keyword = case_when(
         hit_cz & !is.na(keyword_cz) ~ keyword_cz,
         hit_en & !is.na(keyword_en) ~ keyword_en,
-        TRUE ~ coalesce(keyword_cz, keyword_en)
+        TRUE ~ dplyr::coalesce(keyword_cz, keyword_en)
       )
     ) %>%
     distinct(link_norm, keyword, .keep_all = TRUE)
