@@ -3,7 +3,7 @@ name: News monitor
 on:
   schedule:
     # workflow se spousti kazdou hodinu; samotny job bezi jen v 03:00 a 15:00 Europe/Prague
-    - cron: '5 2,14 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
