@@ -110,18 +110,25 @@ escape_regex <- function(x) {
 
 first_sentences <- function(x, max_sentences = 3, max_chars = 550) {
   x <- strip_html(x)
+
   vapply(
     x,
     function(one) {
       if (is.na(one) || one == "") return("")
-      parts <- unlist(str_split(one, "(?<=[.!?])\\s+", perl = TRUE))
+
+      parts <- unlist(strsplit(one, "(?<=[.!?])[[:space:]]+", perl = TRUE))
+      parts <- trimws(parts)
       parts <- parts[nzchar(parts)]
+
       if (length(parts) == 0) return("")
+
       abstract <- paste(head(parts, max_sentences), collapse = " ")
       abstract <- str_squish(abstract)
+
       if (nchar(abstract) > max_chars) {
         abstract <- paste0(substr(abstract, 1, max_chars - 3), "...")
       }
+
       abstract
     },
     character(1)
