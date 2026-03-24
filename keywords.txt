@@ -1,2 +1,6 @@
 klimatická změna;climate change
 klimatický extrém;climate extreme
+sucho;drought
+povodeň;flood
+emise;emissions
+teplotní rekord;temperature record
