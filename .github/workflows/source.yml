@@ -37,7 +37,7 @@ jobs:
 
       - name: Install packages
         run: |
-          Rscript -e 'install.packages(c("tidyRSS","dplyr","purrr","stringr","readr","tibble","xml2","tidyr","rvest","tidyRSS"), repos="https://cloud.r-project.org")'
+          Rscript -e 'install.packages(c("tidyRSS","dplyr","purrr","stringr","readr","tibble","xml2","tidyr","rvest"), repos="https://cloud.r-project.org")'
 
       - name: Run script
         run: |
