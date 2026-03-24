@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       date_from:
-        description: "YYYY-MM-DD"
+        description: "Start date in YYYY-MM-DD"
         required: false
       date_to:
-        description: "YYYY-MM-DD"
+        description: "End date in YYYY-MM-DD"
         required: false
   schedule:
-    - cron: '0 * * * *'   # každou hodinu
+    - cron: '0 * * * *'
 
 jobs:
   run:
@@ -23,60 +23,80 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🕒 kontrola času (jen jednou)
       - name: Check Prague time
         id: time
+        shell: bash
         run: |
           H=$(TZ=Europe/Prague date +%H)
-          echo "hour=$H" >> $GITHUB_OUTPUT
+          echo "hour=$H" >> "$GITHUB_OUTPUT"
           echo "Hour in Prague: $H"
 
-      # 🚫 skip mimo 03/15 (ALE ne při ručním spuštění)
-      - name: Skip run outside schedule
+      - name: Stop outside scheduled hours
         if: steps.time.outputs.hour != '03' && steps.time.outputs.hour != '15' && github.event_name != 'workflow_dispatch'
+        shell: bash
         run: |
-          echo "Skipping run (not 03/15 Prague)"
+          echo "Skipping run outside 03:00 and 15:00 Europe/Prague."
           exit 0
 
-      # 🟢 odtud už běží všechno vždy konzistentně
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
 
-      - name: Install system libs
+      - name: Install system libraries
+        shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev
 
       - name: Install R packages
+        shell: bash
         run: |
           Rscript -e 'install.packages(c(
-            "tidyRSS","dplyr","purrr","stringr",
-            "readr","tibble","xml2","tidyr","rvest"
-          ), repos="https://cloud.r-project.org")'
+            "dplyr","purrr","stringr","readr",
+            "tibble","xml2","tidyr","rvest"
+          ), repos = "https://cloud.r-project.org")'
 
-      - name: Verify packages
-        run: |
-          Rscript -e 'print("Installed packages:"); print(installed.packages()[,1])'
-
-      # ▶️ spuštění skriptu
       - name: Run script
+        shell: bash
         run: |
           Rscript source.R "${{ github.event.inputs.date_from }}" "${{ github.event.inputs.date_to }}"
 
-      # 🔍 debug – uvidíš, co vzniklo
-      - name: Show files
+      - name: Show generated files
+        shell: bash
         run: |
-          echo "Files:"
+          echo "Files in workspace:"
           ls -la
+          echo ""
+          echo "Preview of source.csv:"
+          if [ -f source.csv ]; then
+            head -n 20 source.csv
+          else
+            echo "source.csv not found"
+          fi
+          echo ""
+          echo "Preview of news_monitor.log:"
+          if [ -f news_monitor.log ]; then
+            tail -n 50 news_monitor.log
+          else
+            echo "news_monitor.log not found"
+          fi
 
-      # 💾 commit výsledků
-      - name: Commit results
+      - name: Commit and push results
+        shell: bash
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add source.csv news_monitor.log
 
-          git diff --cached --quiet || git commit -m "Auto update news output"
+          git diff --cached --quiet || git commit -m "Auto-update news monitoring output"
 
           git push
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-monitor-output
+          path: |
+            source.csv
+            news_monitor.log
+          if-no-files-found: warn
