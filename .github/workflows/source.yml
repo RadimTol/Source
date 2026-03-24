@@ -1,10 +1,12 @@
 name: News monitor
 
+permissions:
+  contents: write
+
 on:
-  schedule:
-    # workflow se spousti kazdou hodinu; samotny job bezi jen v 03:00 a 15:00 Europe/Prague
-    - cron: '0 * * * *'
   workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # každou hodinu, filtrujeme níže
 
 jobs:
   run-news-monitor:
@@ -13,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Check Prague schedule
         id: schedule_check
@@ -26,7 +30,7 @@ jobs:
             echo "run_job=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Stop outside 03:00 / 15:00 Europe/Prague
+      - name: Stop outside schedule
         if: steps.schedule_check.outputs.run_job != 'true'
         run: echo "Skipping run outside target hours."
 
@@ -48,7 +52,7 @@ jobs:
             "readr","tibble","xml2","tidyr","rvest"
           ), repos = "https://cloud.r-project.org")'
 
-      - name: Run monitor (last 12 hours)
+      - name: Run monitor
         if: steps.schedule_check.outputs.run_job == 'true'
         run: |
           Rscript news_monitor_v2.R \
@@ -57,11 +61,15 @@ jobs:
             --output-file source.csv \
             --log-file news_monitor.log
 
-      - name: Upload CSV output
+      - name: Commit and push results
         if: steps.schedule_check.outputs.run_job == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: news-monitor-output
-          path: |
-            source.csv
-            news_monitor.log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add source.csv news_monitor.log
+
+          # commit jen pokud jsou změny
+          git diff --cached --quiet || git commit -m "Auto-update news monitoring output"
+
+          git push
