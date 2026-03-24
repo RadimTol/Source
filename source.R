@@ -187,7 +187,7 @@ strip_html <- function(x) {
 normalize_link <- function(x) {
   x <- trimws(x)
   x <- str_replace(x, "#.*$", "")
-  x <- str_replace(x, "\?utm_[^=]+=[^&]+(&|$)", "?")
+  x <- str_replace(x, "\\?utm_[^=]+=[^&]+(&|$)", "?")
   x <- str_replace_all(x, "\\?utm_[^=]+=[^&]+(&|$)", "?")
   x <- str_replace(x, "[?&]$", "")
   x <- str_replace(x, "\\?$", "")
