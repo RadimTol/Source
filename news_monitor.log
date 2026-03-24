@@ -1,41 +1,22 @@
-[2026-03-24 18:49:25] [INFO] Interval: 2026-03-23 -> 2026-03-24 23:59:59 (mode=date_range) 
-[2026-03-24 18:49:25] [INFO] Nacteno 6 dvojic klicovych slov z keywords.txt 
-[2026-03-24 18:49:25] [INFO] Nacitam feed: CT24 
-[2026-03-24 18:49:27] [WARN] Datum se nepodarilo naparsovat pro feed CT24: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:27] [INFO] Nacitam feed: iDNES 
-[2026-03-24 18:49:29] [WARN] Datum se nepodarilo naparsovat pro feed iDNES: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:29] [INFO] Nacitam feed: Novinky 
-[2026-03-24 18:49:30] [WARN] Datum se nepodarilo naparsovat pro feed Novinky: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:30] [INFO] Nacitam feed: Seznam Zpravy 
-[2026-03-24 18:49:31] [WARN] Datum se nepodarilo naparsovat pro feed Seznam Zpravy: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:31] [INFO] Nacitam feed: Denik N 
-[2026-03-24 18:49:32] [WARN] Datum se nepodarilo naparsovat pro feed Denik N: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:32] [INFO] Nacitam feed: BBC World 
-[2026-03-24 18:49:32] [WARN] Datum se nepodarilo naparsovat pro feed BBC World: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:32] [INFO] Nacitam feed: The Guardian World 
-[2026-03-24 18:49:32] [WARN] Datum se nepodarilo naparsovat pro feed The Guardian World: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:32] [INFO] Nacitam feed: NYTimes World 
-[2026-03-24 18:49:32] [WARN] Datum se nepodarilo naparsovat pro feed NYTimes World: invalid regular expression '^\D*?\b(((?<Y>\d{4})(?!\d)\D*?((?<Om>1[0-2]|0?[1-9](?!\d))|(((?<Om_b>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d>[012]?[1-9]|3[01]|[12]0)(?!\d)\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?(?<Op>(AM|PM))(?![[:alpha:]])\D*?(?<H>2[0-4]|[01]?\d)(?!\d)\D*?(?<M>[0-5]?\d)(?!\d)\D*?((?<OS_S>[0-5]?\d\.\d+)|(?<S>[0-6]?\d))(?!\d)\D*?((?<Ou_Ou>Z)(?![[:alpha:]])|(?<Oz_Oz>[-+]\d{4})(?!\d)|(?<OO>[-+]\d{2}:\d{2})(?!\d)|(?<Oo>[-+]\d{2})(?!\d)))|((?<Y_e>\d{4})\D*?((?<Om_e>1[0-2]|0[1-9])|(((?<Om_b_e>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?<Om_B_e>January|February|March|April|May|June|July|August|September|October|November|December))(?![[:alpha:]])))\D*?(?<d_e>[012][1-9]|3[01]|[12]0)\D*?(?<H_e>2[0-4]|[01]\d)\D*?(?<M_e>[0-5]\d)\D*?((?<OS_S_e>[0-5]\d\.\d*)|(?<S_e>[0-6]\d))\D*?(?<Op_e 
-[2026-03-24 18:49:32] [INFO] Nacteno celkem 302 RSS zaznamu 
-[2026-03-24 18:49:32] [INFO] Po filtraci na interval zustalo 0 zaznamu 
-[2026-03-24 18:49:32] [WARN] V danem intervalu nebyly v RSS feedech nalezeny zadne zaznamy. 
-[2026-03-24 19:24:37] [INFO] Interval: NA -> NA 
-[2026-03-24 19:24:37] [INFO] Loading CT24 
-[2026-03-24 19:24:39] [INFO] Loading iDNES 
-[2026-03-24 19:24:40] [INFO] Loading Novinky 
-[2026-03-24 19:24:41] [INFO] Loading Seznam Zpravy 
-[2026-03-24 19:24:42] [INFO] Loading Denik N 
-[2026-03-24 19:24:43] [INFO] Loading BBC World 
-[2026-03-24 19:24:43] [INFO] Loading Reuters World 
-[2026-03-24 19:24:43] [WARN] Skipping Reuters World Attempt to fetch feed resulted in an error: Error in curl::curl_fetch_memory(url, handle = handle): Couldn't resolve host name [feeds.reuters.com]:
-Could not resolve host: feeds.reuters.com
- 
-[2026-03-24 19:24:43] [INFO] Loading The Guardian World 
-[2026-03-24 19:24:44] [INFO] Loading AP News 
-[2026-03-24 19:24:44] [WARN] Skipping AP News Error in feed parse; please check URL.
-
-  If you're certain that this is a valid rss feed,
-  please file an issue at https://github.com/RobertMyles/tidyRSS/issues.
-  Please note that the feed may also be undergoing maintenance. 
-[2026-03-24 19:24:44] [INFO] Loading NYTimes World 
-[2026-03-24 19:24:44] [INFO] After filter: 0 
+[2026-03-24 22:10:48] [INFO] Interval: 2026-03-23 -> 2026-03-24 
+[2026-03-24 22:10:48] [INFO] Nacteno 6 dvojic klicovych slov z keywords.txt 
+[2026-03-24 22:10:48] [INFO] Loading CT24 
+[2026-03-24 22:10:50] [WARN] CT24: nepodarilo se naparsovat datum u 30 zaznamu 
+[2026-03-24 22:10:50] [INFO] Loading iDNES 
+[2026-03-24 22:10:52] [WARN] iDNES: nepodarilo se naparsovat datum u 30 zaznamu 
+[2026-03-24 22:10:52] [INFO] Loading Novinky 
+[2026-03-24 22:10:53] [INFO] Loading Seznam Zpravy 
+[2026-03-24 22:10:54] [INFO] Loading Denik N 
+[2026-03-24 22:10:55] [INFO] Loading BBC World 
+[2026-03-24 22:10:55] [WARN] BBC World: nepodarilo se naparsovat datum u 40 zaznamu 
+[2026-03-24 22:10:55] [INFO] Loading Reuters World 
+[2026-03-24 22:10:55] [WARN] Skipping Reuters World cannot open the connection 
+[2026-03-24 22:10:55] [INFO] Loading The Guardian World 
+[2026-03-24 22:10:55] [WARN] The Guardian World: nepodarilo se naparsovat datum u 45 zaznamu 
+[2026-03-24 22:10:55] [INFO] Loading AP News 
+[2026-03-24 22:10:56] [WARN] Skipping AP News cannot open the connection 
+[2026-03-24 22:10:56] [INFO] Loading NYTimes World 
+[2026-03-24 22:10:56] [INFO] Nacteno celkem 303 RSS zaznamu 
+[2026-03-24 22:10:56] [INFO] Po filtraci na interval zustalo 158 zaznamu 
+[2026-03-24 22:10:56] [INFO] Po matchi na klicova slova: 1 zaznamu 
+[2026-03-24 22:10:56] [INFO] Hotovo. Ulozeno 1 zaznamu do source.csv 
