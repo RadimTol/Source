@@ -7,107 +7,46 @@ on:
   workflow_dispatch:
     inputs:
       date_from:
-        description: 'Pocatecni datum YYYY-MM-DD (volitelne pro manualni beh)'
+        description: "YYYY-MM-DD"
         required: false
-        type: string
       date_to:
-        description: 'Koncove datum YYYY-MM-DD (volitelne pro manualni beh)'
+        description: "YYYY-MM-DD"
         required: false
-        type: string
   schedule:
     - cron: '0 * * * *'
 
 jobs:
-  run-news-monitor:
+  run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
+      - uses: actions/checkout@v4
 
-      - name: Check Prague schedule
-        id: schedule_check
-        shell: bash
+      - name: Check Prague time
+        id: time
         run: |
-          PRAGUE_HOUR=$(TZ=Europe/Prague date +%H)
-          echo "Prague hour: ${PRAGUE_HOUR}"
-          if [ "${PRAGUE_HOUR}" = "03" ] || [ "${PRAGUE_HOUR}" = "15" ]; then
-            echo "run_job=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run_job=false" >> "$GITHUB_OUTPUT"
-          fi
+          H=$(TZ=Europe/Prague date +%H)
+          echo "hour=$H" >> $GITHUB_OUTPUT
 
-      - name: Stop outside schedule
-        if: steps.schedule_check.outputs.run_job != 'true' && github.event_name != 'workflow_dispatch'
-        run: echo "Skipping run outside target hours."
+      - name: Skip if not 03/15
+        if: steps.time.outputs.hour != '03' && steps.time.outputs.hour != '15' && github.event_name != 'workflow_dispatch'
+        run: echo "Skipping"
 
-      - name: Setup R
-        if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
-        uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@v2
+        if: steps.time.outputs.hour == '03' || steps.time.outputs.hour == '15' || github.event_name == 'workflow_dispatch'
 
-      - name: Install system libraries
-        if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Install packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev
+          Rscript -e 'install.packages(c("tidyRSS","dplyr","purrr","stringr","readr","tibble","xml2","tidyr","rvest"), repos="https://cloud.r-project.org")'
 
-      - name: Install R packages
-        if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Run script
         run: |
-          Rscript -e 'install.packages(c(
-            "tidyRSS","dplyr","purrr","stringr","lubridate",
-            "readr","tibble","xml2","tidyr","rvest"
-          ), repos = "https://cloud.r-project.org")'
+          Rscript source.R "${{ github.event.inputs.date_from }}" "${{ github.event.inputs.date_to }}"
 
-      - name: Build script arguments
-        if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
-        id: build_args
-        shell: bash
+      - name: Commit
         run: |
-          ARGS="--keywords-file keywords.txt --output-file source.csv --log-file news_monitor.log"
-
-          if [ -n "${{ inputs.date_from }}" ] && [ -n "${{ inputs.date_to }}" ]; then
-            ARGS="$ARGS --date-from ${{ inputs.date_from }} --date-to ${{ inputs.date_to }}"
-          else
-            ARGS="$ARGS --hours-back 12"
-          fi
-
-          echo "script_args=$ARGS" >> "$GITHUB_OUTPUT"
-          echo "Using arguments: $ARGS"
-
-      - name: Run monitor
-        if: steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch'
-        run: |
-          Rscript source.R ${{ steps.build_args.outputs.script_args }}
-
-      - name: Show generated files
-        if: always()
-        run: |
-          echo "Files in workspace:"
-          ls -la
-          echo "---- source.csv preview ----"
-          test -f source.csv && head -n 20 source.csv || true
-          echo "---- news_monitor.log preview ----"
-          test -f news_monitor.log && tail -n 50 news_monitor.log || true
-
-      - name: Commit and push results
-        if: (steps.schedule_check.outputs.run_job == 'true' || github.event_name == 'workflow_dispatch')
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add source.csv news_monitor.log
-          git diff --cached --quiet || git commit -m "Auto-update news monitoring output"
-          git push origin main
-
-      - name: Upload CSV output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: news-monitor-output
-          path: |
-            source.csv
-            news_monitor.log
-          if-no-files-found: warn
+          git diff --cached --quiet || git commit -m "update"
+          git push
