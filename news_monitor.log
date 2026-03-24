@@ -19,3 +19,23 @@
 [2026-03-24 18:49:32] [INFO] Nacteno celkem 302 RSS zaznamu 
 [2026-03-24 18:49:32] [INFO] Po filtraci na interval zustalo 0 zaznamu 
 [2026-03-24 18:49:32] [WARN] V danem intervalu nebyly v RSS feedech nalezeny zadne zaznamy. 
+[2026-03-24 19:24:37] [INFO] Interval: NA -> NA 
+[2026-03-24 19:24:37] [INFO] Loading CT24 
+[2026-03-24 19:24:39] [INFO] Loading iDNES 
+[2026-03-24 19:24:40] [INFO] Loading Novinky 
+[2026-03-24 19:24:41] [INFO] Loading Seznam Zpravy 
+[2026-03-24 19:24:42] [INFO] Loading Denik N 
+[2026-03-24 19:24:43] [INFO] Loading BBC World 
+[2026-03-24 19:24:43] [INFO] Loading Reuters World 
+[2026-03-24 19:24:43] [WARN] Skipping Reuters World Attempt to fetch feed resulted in an error: Error in curl::curl_fetch_memory(url, handle = handle): Couldn't resolve host name [feeds.reuters.com]:
+Could not resolve host: feeds.reuters.com
+ 
+[2026-03-24 19:24:43] [INFO] Loading The Guardian World 
+[2026-03-24 19:24:44] [INFO] Loading AP News 
+[2026-03-24 19:24:44] [WARN] Skipping AP News Error in feed parse; please check URL.
+
+  If you're certain that this is a valid rss feed,
+  please file an issue at https://github.com/RobertMyles/tidyRSS/issues.
+  Please note that the feed may also be undergoing maintenance. 
+[2026-03-24 19:24:44] [INFO] Loading NYTimes World 
+[2026-03-24 19:24:44] [INFO] After filter: 0 
