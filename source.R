@@ -374,6 +374,87 @@ match_keywords <- function(news_df, keywords_df) {
     distinct(link_norm, keyword, .keep_all = TRUE)
 }
 
+read_existing_results <- function(path) {
+  if (!file.exists(path)) {
+    return(tibble(
+      date = as.Date(character()),
+      keyword = character(),
+      source = character(),
+      link = character(),
+      abstract = character(),
+      link_norm = character()
+    ))
+  }
+
+  out <- tryCatch({
+    df <- suppressMessages(readr::read_csv(path, show_col_types = FALSE))
+    required_cols <- c("date", "keyword", "source", "link", "abstract")
+
+    missing_cols <- setdiff(required_cols, names(df))
+    if (length(missing_cols) > 0) {
+      log_msg("WARN", sprintf("Existujici %s nema ocekavane sloupce, bude ignorovan.", path))
+      return(tibble(
+        date = as.Date(character()),
+        keyword = character(),
+        source = character(),
+        link = character(),
+        abstract = character(),
+        link_norm = character()
+      ))
+    }
+
+    df %>%
+      transmute(
+        date = as.Date(date),
+        keyword = as.character(keyword),
+        source = as.character(source),
+        link = as.character(link),
+        abstract = as.character(abstract),
+        link_norm = normalize_link(link)
+      )
+  }, error = function(e) {
+    log_msg("WARN", sprintf("Existujici %s se nepodarilo nacist, bude ignorovan: %s", path, e$message))
+    tibble(
+      date = as.Date(character()),
+      keyword = character(),
+      source = character(),
+      link = character(),
+      abstract = character(),
+      link_norm = character()
+    )
+  })
+
+  out
+}
+
+merge_results <- function(new_results, output_path) {
+  existing_results <- read_existing_results(output_path)
+
+  log_msg("INFO", sprintf("Existujici vystup obsahuje %d zaznamu", nrow(existing_results)))
+  log_msg("INFO", sprintf("Novy beh vytvoril %d zaznamu", nrow(new_results)))
+
+  combined <- bind_rows(new_results, existing_results) %>%
+    mutate(
+      date = as.Date(date),
+      keyword = as.character(keyword),
+      source = as.character(source),
+      link = as.character(link),
+      abstract = as.character(abstract),
+      link_norm = normalize_link(link)
+    ) %>%
+    arrange(desc(date), source, keyword) %>%
+    distinct(link_norm, keyword, .keep_all = TRUE) %>%
+    arrange(desc(date), source, keyword)
+
+  added_count <- nrow(combined) - nrow(existing_results)
+  if (added_count < 0) added_count <- 0
+
+  log_msg("INFO", sprintf("Po slouceni a deduplikaci je ve vystupu %d zaznamu", nrow(combined)))
+  log_msg("INFO", sprintf("Pribylo %d novych zaznamu", added_count))
+
+  combined
+}
+
 # -----------------------------
 # MAIN
 # -----------------------------
@@ -385,13 +466,9 @@ log_msg("INFO", sprintf("Nacteno celkem %d RSS zaznamu", nrow(all_news)))
 
 if (nrow(all_news) == 0) {
   log_msg("WARN", "Nepodarilo se nacist zadna RSS data.")
-  readr::write_excel_csv(tibble(
-    date = as.Date(character()),
-    keyword = character(),
-    source = character(),
-    link = character(),
-    abstract = character()
-  ), default_output_file)
+  existing_results <- read_existing_results(default_output_file) %>%
+    select(date, keyword, source, link, abstract)
+  readr::write_excel_csv(existing_results, default_output_file)
   quit(save = "no")
 }
 
@@ -403,13 +480,9 @@ log_msg("INFO", sprintf("Po filtraci na interval zustalo %d zaznamu", nrow(filte
 
 if (nrow(filtered_news) == 0) {
   log_msg("WARN", "V danem intervalu nebyly v RSS feedech nalezeny zadne zaznamy.")
-  readr::write_excel_csv(tibble(
-    date = as.Date(character()),
-    keyword = character(),
-    source = character(),
-    link = character(),
-    abstract = character()
-  ), default_output_file)
+  existing_results <- read_existing_results(default_output_file) %>%
+    select(date, keyword, source, link, abstract)
+  readr::write_excel_csv(existing_results, default_output_file)
   quit(save = "no")
 }
 
@@ -428,7 +501,8 @@ if (nrow(results) > 0) {
       keyword = keyword,
       source = source,
       link = link,
-      abstract = abstract
+      abstract = abstract,
+      link_norm = link_norm
     )
 } else {
   results <- tibble(
@@ -436,9 +510,13 @@ if (nrow(results) > 0) {
     keyword = character(),
     source = character(),
     link = character(),
-    abstract = character()
+    abstract = character(),
+    link_norm = character()
   )
 }
 
-readr::write_excel_csv(results, default_output_file)
-log_msg("INFO", sprintf("Hotovo. Ulozeno %d zaznamu do %s", nrow(results), default_output_file))
+final_results <- merge_results(results, default_output_file) %>%
+  select(date, keyword, source, link, abstract)
+
+readr::write_excel_csv(final_results, default_output_file)
+log_msg("INFO", sprintf("Hotovo. Ulozeno %d zaznamu do %s", nrow(final_results), default_output_file))
