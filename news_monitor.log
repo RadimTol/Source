@@ -1,21 +1,21 @@
-[2026-03-25 19:20:22] [INFO] Interval: 2026-03-24 -> 2026-03-25 
-[2026-03-25 19:20:22] [INFO] Nacteno 13 dvojic klicovych slov z keywords.txt 
-[2026-03-25 19:20:22] [INFO] Loading CT24 
-[2026-03-25 19:20:23] [INFO] Loading iDNES 
-[2026-03-25 19:20:24] [INFO] Loading Novinky 
-[2026-03-25 19:20:25] [INFO] Loading Seznam Zpravy 
-[2026-03-25 19:20:26] [INFO] Loading Denik N 
-[2026-03-25 19:20:27] [INFO] Loading BBC World 
-[2026-03-25 19:20:27] [INFO] Loading The Guardian World 
-[2026-03-25 19:20:27] [INFO] Loading NYTimes World 
-[2026-03-25 19:20:27] [INFO] Loading NPR World 
-[2026-03-25 19:20:28] [INFO] Loading Al Jazeera 
-[2026-03-25 19:20:28] [INFO] Loading Sky News World 
-[2026-03-25 19:20:28] [INFO] Nacteno celkem 354 RSS zaznamu 
-[2026-03-25 19:20:28] [INFO] Po filtraci na interval zustalo 339 zaznamu 
-[2026-03-25 19:20:30] [INFO] Po matchi na klicova slova: 1 zaznamu 
-[2026-03-25 19:20:30] [INFO] Existujici vystup obsahuje 5 zaznamu 
-[2026-03-25 19:20:30] [INFO] Novy beh vytvoril 1 zaznamu 
-[2026-03-25 19:20:30] [INFO] Po slouceni a deduplikaci je ve vystupu 5 zaznamu 
-[2026-03-25 19:20:30] [INFO] Pribylo 0 novych zaznamu 
-[2026-03-25 19:20:30] [INFO] Hotovo. Ulozeno 5 zaznamu do source.csv 
+[2026-03-25 22:05:59] [INFO] Interval: 2026-03-24 -> 2026-03-25 
+[2026-03-25 22:05:59] [INFO] Nacteno 13 dvojic klicovych slov z keywords.txt 
+[2026-03-25 22:06:00] [INFO] Loading CT24 
+[2026-03-25 22:06:02] [INFO] Loading iDNES 
+[2026-03-25 22:06:03] [INFO] Loading Novinky 
+[2026-03-25 22:06:04] [INFO] Loading Seznam Zpravy 
+[2026-03-25 22:06:06] [INFO] Loading Denik N 
+[2026-03-25 22:06:07] [INFO] Loading BBC World 
+[2026-03-25 22:06:07] [INFO] Loading The Guardian World 
+[2026-03-25 22:06:07] [INFO] Loading NYTimes World 
+[2026-03-25 22:06:08] [INFO] Loading NPR World 
+[2026-03-25 22:06:08] [INFO] Loading Al Jazeera 
+[2026-03-25 22:06:08] [INFO] Loading Sky News World 
+[2026-03-25 22:06:09] [INFO] Nacteno celkem 355 RSS zaznamu 
+[2026-03-25 22:06:09] [INFO] Po filtraci na interval zustalo 341 zaznamu 
+[2026-03-25 22:06:10] [INFO] Po matchi na klicova slova: 1 zaznamu 
+[2026-03-25 22:06:10] [INFO] Existujici vystup obsahuje 5 zaznamu 
+[2026-03-25 22:06:10] [INFO] Novy beh vytvoril 1 zaznamu 
+[2026-03-25 22:06:10] [INFO] Po slouceni a deduplikaci je ve vystupu 5 zaznamu 
+[2026-03-25 22:06:10] [INFO] Pribylo 0 novych zaznamu 
+[2026-03-25 22:06:10] [INFO] Hotovo. Ulozeno 5 zaznamu do source.csv 
