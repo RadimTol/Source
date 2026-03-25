@@ -13,7 +13,7 @@ on:
         description: "End date in YYYY-MM-DD"
         required: false
   schedule:
-    - cron: '0 * * * *'
+    - cron: '10 * * * *'
 
 jobs:
   run:
@@ -72,8 +72,14 @@ jobs:
           else
             echo "source.csv not found"
           fi
+          echo ""
+          echo "Preview of news_monitor.log:"
+          if [ -f news_monitor.log ]; then
+            tail -n 50 news_monitor.log
+          else
+            echo "news_monitor.log not found"
+          fi
 
-      # ✅ ROBUST PUSH (retry + rebase)
       - name: Commit and push results
         shell: bash
         run: |
@@ -91,7 +97,6 @@ jobs:
 
           for i in 1 2 3; do
             echo "Push attempt $i..."
-
             git pull --rebase origin main || true
 
             if git push; then
