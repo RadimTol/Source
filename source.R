@@ -13,9 +13,6 @@ suppressPackageStartupMessages({
 
 options(stringsAsFactors = FALSE)
 
-# -----------------------------
-# CONFIG
-# -----------------------------
 default_keywords_file <- "keywords.txt"
 default_output_file   <- "source.csv"
 default_log_file      <- "news_monitor.log"
@@ -28,15 +25,13 @@ rss_feeds <- tribble(
   "Seznam Zpravy",      "https://www.seznamzpravy.cz/rss",
   "Denik N",            "https://denikn.cz/feed/",
   "BBC World",          "http://feeds.bbci.co.uk/news/world/rss.xml",
-  "Reuters World",      "https://feeds.reuters.com/Reuters/worldNews",
   "The Guardian World", "https://www.theguardian.com/world/rss",
-  "AP News",            "https://apnews.com/rss/apf-topnews",
-  "NYTimes World",      "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+  "NYTimes World",      "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+  "NPR World",          "https://feeds.npr.org/1004/rss.xml",
+  "Al Jazeera",         "https://www.aljazeera.com/xml/rss/all.xml",
+  "Sky News World",     "https://feeds.skynews.com/feeds/rss/world.xml"
 )
 
-# -----------------------------
-# LOGGING
-# -----------------------------
 log_file <- default_log_file
 
 log_msg <- function(level, text) {
@@ -45,13 +40,6 @@ log_msg <- function(level, text) {
   cat(line, "\n", file = log_file, append = TRUE)
 }
 
-# -----------------------------
-# ARGUMENTS
-# positional:
-#   Rscript source.R 2026-03-23 2026-03-24
-# or:
-#   Rscript source.R "" ""
-# -----------------------------
 args <- commandArgs(trailingOnly = TRUE)
 
 arg1 <- if (length(args) >= 1) trimws(args[1]) else ""
@@ -60,20 +48,12 @@ arg2 <- if (length(args) >= 2) trimws(args[2]) else ""
 date_from <- if (nzchar(arg1)) as.Date(arg1) else Sys.Date() - 1
 date_to   <- if (nzchar(arg2)) as.Date(arg2) else Sys.Date()
 
-if (is.na(date_from) || is.na(date_to)) {
-  stop("Datum musi byt ve formatu YYYY-MM-DD.")
-}
-if (date_to < date_from) {
-  stop("Koncove datum nesmi byt mensi nez pocatecni datum.")
-}
+if (is.na(date_from) || is.na(date_to)) stop("Datum musi byt ve formatu YYYY-MM-DD.")
+if (date_to < date_from) stop("Koncove datum nesmi byt mensi nez pocatecni datum.")
 
-# reset log file for each run
 cat("", file = log_file, append = FALSE)
 log_msg("INFO", sprintf("Interval: %s -> %s", date_from, date_to))
 
-# -----------------------------
-# HELPERS
-# -----------------------------
 strip_html <- function(x) {
   x <- ifelse(is.na(x), "", x)
   vapply(
@@ -115,20 +95,15 @@ first_sentences <- function(x, max_sentences = 3, max_chars = 550) {
     x,
     function(one) {
       if (is.na(one) || one == "") return("")
-
       parts <- unlist(strsplit(one, "(?<=[.!?])[[:space:]]+", perl = TRUE))
       parts <- trimws(parts)
       parts <- parts[nzchar(parts)]
-
       if (length(parts) == 0) return("")
-
       abstract <- paste(head(parts, max_sentences), collapse = " ")
       abstract <- str_squish(abstract)
-
       if (nchar(abstract) > max_chars) {
         abstract <- paste0(substr(abstract, 1, max_chars - 3), "...")
       }
-
       abstract
     },
     character(1)
@@ -136,17 +111,12 @@ first_sentences <- function(x, max_sentences = 3, max_chars = 550) {
 }
 
 read_keywords <- function(path) {
-  if (!file.exists(path)) {
-    stop(sprintf("Soubor '%s' nebyl nalezen.", path))
-  }
+  if (!file.exists(path)) stop(sprintf("Soubor '%s' nebyl nalezen.", path))
 
   raw <- readLines(path, warn = FALSE, encoding = "UTF-8")
   raw <- trimws(raw)
   raw <- raw[nzchar(raw)]
-
-  if (length(raw) == 0) {
-    stop("Soubor keywords.txt je prazdny.")
-  }
+  if (length(raw) == 0) stop("Soubor keywords.txt je prazdny.")
 
   parsed <- str_split_fixed(raw, ";", 2)
 
@@ -160,10 +130,7 @@ read_keywords <- function(path) {
     ) %>%
     filter(!(is.na(keyword_cz) & is.na(keyword_en)))
 
-  if (nrow(out) == 0) {
-    stop("V keywords.txt nebyly nalezeny validni dvojice 'cz;en'.")
-  }
-
+  if (nrow(out) == 0) stop("V keywords.txt nebyly nalezeny validni dvojice 'cz;en'.")
   out
 }
 
@@ -171,8 +138,18 @@ parse_pub_datetime <- function(x) {
   x <- as.character(x)
   x[is.na(x)] <- ""
 
-  parse_one <- function(s) {
+  normalize_tz <- function(s) {
     s <- trimws(s)
+    s <- sub(" GMT$", " +0000", s)
+    s <- sub(" UTC$", " +0000", s)
+    s <- sub(" BST$", " +0100", s)
+    s <- sub(" CET$", " +0100", s)
+    s <- sub(" CEST$", " +0200", s)
+    s
+  }
+
+  parse_one <- function(s) {
+    s <- normalize_tz(s)
     if (!nzchar(s)) return(as.POSIXct(NA, tz = "UTC"))
 
     fmts <- c(
@@ -287,14 +264,8 @@ extract_article_text <- function(link) {
     page <- read_html(link)
 
     selectors <- c(
-      "article p",
-      "main p",
-      ".article p",
-      ".article__content p",
-      ".entry-content p",
-      ".post-content p",
-      ".content p",
-      "p"
+      "article p", "main p", ".article p", ".article__content p",
+      ".entry-content p", ".post-content p", ".content p", "p"
     )
 
     for (css in selectors) {
@@ -306,9 +277,7 @@ extract_article_text <- function(link) {
       txt <- txt[nchar(txt) > 40]
       txt <- txt[!str_detect(txt, "^(Copyright|All rights reserved|Subscribe|Sign up|Read more)$")]
 
-      if (length(txt) >= 3) {
-        return(paste(txt, collapse = " "))
-      }
+      if (length(txt) >= 3) return(paste(txt, collapse = " "))
     }
 
     ""
@@ -346,21 +315,11 @@ match_keywords <- function(news_df, keywords_df) {
     rowwise() %>%
     mutate(
       hit_cz = if (!is.na(keyword_cz) && nzchar(keyword_cz)) {
-        str_detect(
-          search_text,
-          regex(paste0("\\b", escape_regex(keyword_cz), "\\b"), ignore_case = TRUE)
-        )
-      } else {
-        FALSE
-      },
+        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_cz), "\\b"), ignore_case = TRUE))
+      } else FALSE,
       hit_en = if (!is.na(keyword_en) && nzchar(keyword_en)) {
-        str_detect(
-          search_text,
-          regex(paste0("\\b", escape_regex(keyword_en), "\\b"), ignore_case = TRUE)
-        )
-      } else {
-        FALSE
-      }
+        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_en), "\\b"), ignore_case = TRUE))
+      } else FALSE
     ) %>%
     ungroup() %>%
     filter(hit_cz | hit_en) %>%
@@ -455,9 +414,6 @@ merge_results <- function(new_results, output_path) {
   combined
 }
 
-# -----------------------------
-# MAIN
-# -----------------------------
 keywords <- read_keywords(default_keywords_file)
 log_msg("INFO", sprintf("Nacteno %d dvojic klicovych slov z %s", nrow(keywords), default_keywords_file))
 
@@ -473,7 +429,7 @@ if (nrow(all_news) == 0) {
 }
 
 filtered_news <- all_news %>%
-  filter(!is.na(datetime)) %>%
+  filter(!is.na(date)) %>%
   filter(date >= date_from, date <= date_to)
 
 log_msg("INFO", sprintf("Po filtraci na interval zustalo %d zaznamu", nrow(filtered_news)))
