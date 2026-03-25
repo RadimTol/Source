@@ -1,143 +1,475 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<title>Přehled článků</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Přehled článků</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --main: rgb(245,184,164);
+      --main-dark: rgb(220,160,140);
+      --bg: #f6f7f8;
+      --text: #1f1f1f;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: #e7e7e7;
+      --shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
-  margin: 0;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-header {
-  background: rgb(245,184,164);
-  padding: 20px;
-  color: #222;
-  font-size: 24px;
-  font-weight: bold;
-}
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-.container {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 10px;
-}
+    header {
+      background: var(--main);
+      padding: 20px 16px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
 
-.card {
-  background: white;
-  padding: 16px;
-  margin-bottom: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
 
-.meta {
-  font-size: 12px;
-  color: #777;
-  margin-bottom: 6px;
-}
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #222;
+    }
 
-.keyword {
-  font-weight: bold;
-  color: rgb(245,184,164);
-}
+    .subhead {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #4b5563;
+    }
 
-.source {
-  margin-left: 10px;
-}
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
 
-.abstract {
-  margin-top: 8px;
-  line-height: 1.5;
-  color: #222;
-  text-decoration: none;
-}
+    .filters {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 18px;
+    }
 
-.abstract:hover {
-  text-decoration: underline;
-}
-</style>
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .filter-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .filter-group select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+      color: #111827;
+      outline: none;
+    }
+
+    .filter-group select:focus {
+      border-color: var(--main-dark);
+      box-shadow: 0 0 0 3px rgba(245,184,164,0.25);
+    }
+
+    .toolbar {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .result-count {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .reset-btn {
+      border: none;
+      background: var(--main);
+      color: #222;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .reset-btn:hover {
+      background: var(--main-dark);
+    }
+
+    .news-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+    }
+
+    .card-inner {
+      padding: 18px 18px 16px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      border: 1px solid #ececec;
+      white-space: nowrap;
+    }
+
+    .meta-pill.topic {
+      background: rgba(245,184,164,0.22);
+      border-color: rgba(245,184,164,0.45);
+      color: #7a3f2f;
+      font-weight: 700;
+    }
+
+    .meta-pill.source {
+      font-weight: 700;
+    }
+
+    .abstract-link {
+      display: block;
+      color: var(--text);
+      text-decoration: none;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .abstract-link:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--main-dark);
+    }
+
+    .empty {
+      background: #fff;
+      border: 1px dashed #d1d5db;
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 16px 12px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .page {
+        padding: 14px 12px 28px;
+      }
+
+      .filters {
+        padding: 14px;
+        border-radius: 12px;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        border-radius: 14px;
+      }
+
+      .card-inner {
+        padding: 14px;
+      }
+
+      .abstract-link {
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .reset-btn {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
-
 <body>
 
-<header id="title">Přehled článků</header>
+  <header>
+    <div class="header-inner">
+      <h1 id="page-title">Přehled článků</h1>
+      <div class="subhead">Automaticky generovaný přehled ze souboru source.csv</div>
+    </div>
+  </header>
 
-<div class="container" id="news"></div>
+  <main class="page">
+    <section class="filters">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="keywordFilter">Téma</label>
+          <select id="keywordFilter">
+            <option value="">Všechna témata</option>
+          </select>
+        </div>
 
-<script>
-function formatDateCZ(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("cs-CZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  });
-}
+        <div class="filter-group">
+          <label for="sourceFilter">Zdroj</label>
+          <select id="sourceFilter">
+            <option value="">Všechny zdroje</option>
+          </select>
+        </div>
+      </div>
 
-function formatFileDate(d) {
-  return d.toLocaleString("cs-CZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
+      <div class="toolbar">
+        <div class="result-count" id="resultCount">Načítám data…</div>
+        <button class="reset-btn" id="resetFilters">Zrušit filtry</button>
+      </div>
+    </section>
 
-// načtení CSV
-Papa.parse("source.csv", {
-  download: true,
-  header: true,
-  complete: function(results) {
+    <section class="news-list" id="newsList"></section>
+    <div class="footer-note">Kliknutím na abstrakt otevřeš původní článek.</div>
+  </main>
 
-    const data = results.data.filter(r => r.date);
+  <script>
+    let allRows = [];
 
-    // řazení (nejnovější nahoře)
-    data.sort((a,b) => new Date(b.date) - new Date(a.date));
+    function formatDateCZ(dateStr) {
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
 
-    const container = document.getElementById("news");
-
-    data.forEach(row => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.innerHTML =
-        `<span>${formatDateCZ(row.date)}</span> | 
-         <span class="keyword">${row.keyword}</span> | 
-         <span class="source">${row.source}</span>`;
-
-      const abstract = document.createElement("a");
-      abstract.className = "abstract";
-      abstract.href = row.link;
-      abstract.target = "_blank";
-      abstract.innerText = row.abstract;
-
-      card.appendChild(meta);
-      card.appendChild(abstract);
-
-      container.appendChild(card);
-    });
-  }
-});
-
-// datum souboru (hack přes HEAD request)
-fetch("source.csv", { method: "HEAD" })
-  .then(res => {
-    const lastModified = res.headers.get("Last-Modified");
-    if (lastModified) {
-      const d = new Date(lastModified);
-      document.getElementById("title").innerText =
-        "Přehled článků (" + formatFileDate(d) + ")";
+      return d.toLocaleDateString("cs-CZ", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
     }
-  });
-</script>
 
+    function formatDateTimeCZ(dateObj) {
+      return dateObj.toLocaleString("cs-CZ", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short"
+      });
+    }
+
+    function sanitize(value) {
+      return (value || "").toString().trim();
+    }
+
+    function populateFilters(rows) {
+      const keywordFilter = document.getElementById("keywordFilter");
+      const sourceFilter = document.getElementById("sourceFilter");
+
+      const keywords = [...new Set(rows.map(r => sanitize(r.keyword)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "cs"));
+      const sources = [...new Set(rows.map(r => sanitize(r.source)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "cs"));
+
+      keywordFilter.innerHTML = '<option value="">Všechna témata</option>';
+      sourceFilter.innerHTML = '<option value="">Všechny zdroje</option>';
+
+      keywords.forEach(keyword => {
+        const opt = document.createElement("option");
+        opt.value = keyword;
+        opt.textContent = keyword;
+        keywordFilter.appendChild(opt);
+      });
+
+      sources.forEach(source => {
+        const opt = document.createElement("option");
+        opt.value = source;
+        opt.textContent = source;
+        sourceFilter.appendChild(opt);
+      });
+    }
+
+    function renderRows() {
+      const keywordValue = document.getElementById("keywordFilter").value;
+      const sourceValue = document.getElementById("sourceFilter").value;
+      const newsList = document.getElementById("newsList");
+      const resultCount = document.getElementById("resultCount");
+
+      const filtered = allRows.filter(row => {
+        const keywordOk = !keywordValue || sanitize(row.keyword) === keywordValue;
+        const sourceOk = !sourceValue || sanitize(row.source) === sourceValue;
+        return keywordOk && sourceOk;
+      });
+
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      newsList.innerHTML = "";
+
+      resultCount.textContent = `Počet zobrazených článků: ${filtered.length}`;
+
+      if (filtered.length === 0) {
+        newsList.innerHTML = '<div class="empty">Žádné články neodpovídají zvoleným filtrům.</div>';
+        return;
+      }
+
+      filtered.forEach(row => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const inner = document.createElement("div");
+        inner.className = "card-inner";
+
+        const metaRow = document.createElement("div");
+        metaRow.className = "meta-row";
+
+        const datePill = document.createElement("span");
+        datePill.className = "meta-pill";
+        datePill.textContent = `Datum: ${formatDateCZ(row.date)}`;
+
+        const topicPill = document.createElement("span");
+        topicPill.className = "meta-pill topic";
+        topicPill.textContent = `Téma: ${sanitize(row.keyword)}`;
+
+        const sourcePill = document.createElement("span");
+        sourcePill.className = "meta-pill source";
+        sourcePill.textContent = `Zdroj: ${sanitize(row.source)}`;
+
+        metaRow.appendChild(datePill);
+        metaRow.appendChild(topicPill);
+        metaRow.appendChild(sourcePill);
+
+        const abstractLink = document.createElement("a");
+        abstractLink.className = "abstract-link";
+        abstractLink.href = sanitize(row.link);
+        abstractLink.target = "_blank";
+        abstractLink.rel = "noopener noreferrer";
+        abstractLink.textContent = sanitize(row.abstract) || sanitize(row.link);
+
+        inner.appendChild(metaRow);
+        inner.appendChild(abstractLink);
+        card.appendChild(inner);
+        newsList.appendChild(card);
+      });
+    }
+
+    function bindEvents() {
+      document.getElementById("keywordFilter").addEventListener("change", renderRows);
+      document.getElementById("sourceFilter").addEventListener("change", renderRows);
+
+      document.getElementById("resetFilters").addEventListener("click", () => {
+        document.getElementById("keywordFilter").value = "";
+        document.getElementById("sourceFilter").value = "";
+        renderRows();
+      });
+    }
+
+    function setTitleFromHeaderDate() {
+      fetch("source.csv", { method: "HEAD" })
+        .then(res => {
+          const lastModified = res.headers.get("Last-Modified");
+          if (lastModified) {
+            const d = new Date(lastModified);
+            document.getElementById("page-title").textContent =
+              `Přehled článků (${formatDateTimeCZ(d)})`;
+          } else {
+            document.getElementById("page-title").textContent = "Přehled článků";
+          }
+        })
+        .catch(() => {
+          document.getElementById("page-title").textContent = "Přehled článků";
+        });
+    }
+
+    Papa.parse("source.csv", {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        allRows = (results.data || [])
+          .map(row => ({
+            date: sanitize(row.date),
+            keyword: sanitize(row.keyword),
+            source: sanitize(row.source),
+            link: sanitize(row.link),
+            abstract: sanitize(row.abstract)
+          }))
+          .filter(row => row.date && row.link);
+
+        populateFilters(allRows);
+        bindEvents();
+        renderRows();
+        setTitleFromHeaderDate();
+      },
+      error: function() {
+        document.getElementById("newsList").innerHTML =
+          '<div class="empty">Nepodařilo se načíst source.csv.</div>';
+        document.getElementById("resultCount").textContent = "Chyba při načítání dat.";
+        setTitleFromHeaderDate();
+      }
+    });
+  </script>
 </body>
 </html>
