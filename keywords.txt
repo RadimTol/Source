@@ -1,13 +1,5 @@
-klimatická změna;climate change
-klimatické změny;climate changes
-globální změna;global change
-globální změny;global changes
-klimatický extrém;climate extreme
-klimatické extrémy;climate extremes
-sucho;drought
-povodeň;flood
-emise;emissions
-teplotní rekord;temperature record
-teplotní rekordy;temperature records
-klimatický rekord;climate record
-klimatické rekordy;climate records
+Klimatická změna-klimatická změna;climate change; klimatické změny;climate changes
+Globální změna-globální změna;global change;globální změny;global changes
+Extrémy-klimatický extrém;climate extreme;klimatické extrémy;climate extremes;sucho;droughtpovodeň;flood
+Emise-emise;emissions
+Rekordy-teplotní rekord;temperature recordteplotní rekordy;temperature records;klimatický rekord;climate recordklimatické rekordy;climate records
