@@ -3,6 +3,9 @@ name: News monitor
 permissions:
   contents: write
 
+env:
+  SCHOLARLY_API_EMAIL: "radim.tolasz@chmi.cz"
+
 on:
   workflow_dispatch:
     inputs:
