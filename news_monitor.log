@@ -1,21 +1,70 @@
-[2026-03-26 09:51:53] [INFO] Interval: 2026-03-25 -> 2026-03-26 
-[2026-03-26 09:51:53] [INFO] Nacteno 23 vazeb skupina->klicove slovo z keywords.txt 
-[2026-03-26 09:51:53] [INFO] Loading CT24 
-[2026-03-26 09:51:55] [INFO] Loading iDNES 
-[2026-03-26 09:51:56] [INFO] Loading Novinky 
-[2026-03-26 09:51:58] [INFO] Loading Seznam Zpravy 
-[2026-03-26 09:51:58] [INFO] Loading Denik N 
-[2026-03-26 09:51:59] [INFO] Loading BBC World 
-[2026-03-26 09:52:00] [INFO] Loading The Guardian World 
-[2026-03-26 09:52:00] [INFO] Loading NYTimes World 
-[2026-03-26 09:52:00] [INFO] Loading NPR World 
-[2026-03-26 09:52:00] [INFO] Loading Al Jazeera 
-[2026-03-26 09:52:00] [INFO] Loading Sky News World 
-[2026-03-26 09:52:01] [INFO] Nacteno celkem 330 RSS zaznamu 
-[2026-03-26 09:52:01] [INFO] Po filtraci na interval zustalo 294 zaznamu 
-[2026-03-26 09:52:02] [INFO] Po matchi na klicova slova: 1 zaznamu 
-[2026-03-26 09:52:03] [INFO] Existujici vystup obsahuje 2 zaznamu 
-[2026-03-26 09:52:03] [INFO] Novy beh vytvoril 1 zaznamu 
-[2026-03-26 09:52:03] [INFO] Po slouceni a deduplikaci je ve vystupu 2 zaznamu 
-[2026-03-26 09:52:03] [INFO] Pribylo 0 novych zaznamu 
-[2026-03-26 09:52:03] [INFO] Hotovo. Ulozeno 2 zaznamu do source.csv 
+[2026-03-26 10:13:52] [INFO] Interval: 2026-03-25 -> 2026-03-26 
+[2026-03-26 10:13:52] [INFO] Pro OpenAlex/Crossref bude pouzit kontakt radim.tolasz@chmi.cz 
+[2026-03-26 10:13:52] [INFO] Nacteno 27 klicovych termu v 5 skupinach z keywords.txt 
+[2026-03-26 10:13:52] [INFO] Loading CT24 
+[2026-03-26 10:13:54] [INFO] Loading iDNES 
+[2026-03-26 10:13:55] [INFO] Loading Novinky 
+[2026-03-26 10:13:56] [INFO] Loading Seznam Zpravy 
+[2026-03-26 10:13:57] [INFO] Loading Denik N 
+[2026-03-26 10:13:57] [INFO] Loading BBC World 
+[2026-03-26 10:13:58] [INFO] Loading The Guardian World 
+[2026-03-26 10:13:58] [INFO] Loading NYTimes World 
+[2026-03-26 10:13:58] [INFO] Loading NPR World 
+[2026-03-26 10:13:58] [INFO] Loading Al Jazeera 
+[2026-03-26 10:13:59] [INFO] Loading Sky News World 
+[2026-03-26 10:13:59] [INFO] Nacteno celkem 330 zaznamu ze zpravodajskych RSS 
+[2026-03-26 10:13:59] [INFO] Loading Nature Climate 
+[2026-03-26 10:13:59] [INFO] Loading Nature Sustainability 
+[2026-03-26 10:13:59] [INFO] Loading PNAS 
+[2026-03-26 10:14:00] [INFO] Loading ScienceDaily Climate 
+[2026-03-26 10:14:00] [INFO] Loading ScienceDaily Global Warming 
+[2026-03-26 10:14:00] [INFO] Loading ScienceDaily Environmental Issues 
+[2026-03-26 10:14:00] [INFO] Nacteno celkem 318 zaznamu z vedeckych RSS 
+[2026-03-26 10:14:01] [INFO] OpenAlex query: climate change [SDG13] 
+[2026-03-26 10:14:02] [INFO] OpenAlex query: climate change [EnvironmentalScience] 
+[2026-03-26 10:14:02] [INFO] Crossref query: climate change 
+[2026-03-26 10:14:03] [INFO] arXiv query: climate change 
+[2026-03-26 10:14:04] [INFO] OpenAlex query: global warming [SDG13] 
+[2026-03-26 10:14:06] [INFO] OpenAlex query: global warming [EnvironmentalScience] 
+[2026-03-26 10:14:07] [INFO] Crossref query: global warming 
+[2026-03-26 10:14:07] [INFO] arXiv query: global warming 
+[2026-03-26 10:14:08] [INFO] OpenAlex query: climate extremes [SDG13] 
+[2026-03-26 10:14:08] [INFO] OpenAlex query: climate extremes [EnvironmentalScience] 
+[2026-03-26 10:14:08] [INFO] Crossref query: climate extremes 
+[2026-03-26 10:14:09] [INFO] arXiv query: climate extremes 
+[2026-03-26 10:14:10] [INFO] OpenAlex query: environmental change [SDG13] 
+[2026-03-26 10:14:10] [INFO] OpenAlex query: environmental change [EnvironmentalScience] 
+[2026-03-26 10:14:10] [INFO] Crossref query: environmental change 
+[2026-03-26 10:14:11] [INFO] arXiv query: environmental change 
+[2026-03-26 10:14:12] [INFO] OpenAlex query: greenhouse gas emissions [SDG13] 
+[2026-03-26 10:14:12] [INFO] OpenAlex query: greenhouse gas emissions [EnvironmentalScience] 
+[2026-03-26 10:14:13] [INFO] Crossref query: greenhouse gas emissions 
+[2026-03-26 10:14:13] [INFO] arXiv query: greenhouse gas emissions 
+[2026-03-26 10:14:14] [INFO] OpenAlex query: drought [SDG13] 
+[2026-03-26 10:14:15] [INFO] OpenAlex query: drought [EnvironmentalScience] 
+[2026-03-26 10:14:15] [INFO] Crossref query: drought 
+[2026-03-26 10:14:16] [INFO] arXiv query: drought 
+[2026-03-26 10:14:17] [INFO] OpenAlex query: flood [SDG13] 
+[2026-03-26 10:14:17] [INFO] OpenAlex query: flood [EnvironmentalScience] 
+[2026-03-26 10:14:17] [INFO] Crossref query: flood 
+[2026-03-26 10:14:19] [INFO] arXiv query: flood 
+[2026-03-26 10:14:19] [INFO] OpenAlex query: heatwave [SDG13] 
+[2026-03-26 10:14:19] [INFO] OpenAlex query: heatwave [EnvironmentalScience] 
+[2026-03-26 10:14:20] [INFO] Crossref query: heatwave 
+[2026-03-26 10:14:20] [INFO] arXiv query: heatwave 
+[2026-03-26 10:14:21] [INFO] OpenAlex query: biodiversity loss [SDG13] 
+[2026-03-26 10:14:21] [INFO] OpenAlex query: biodiversity loss [EnvironmentalScience] 
+[2026-03-26 10:14:22] [INFO] Crossref query: biodiversity loss 
+[2026-03-26 10:14:22] [INFO] arXiv query: biodiversity loss 
+[2026-03-26 10:14:23] [INFO] OpenAlex query: air pollution [SDG13] 
+[2026-03-26 10:14:23] [INFO] OpenAlex query: air pollution [EnvironmentalScience] 
+[2026-03-26 10:14:23] [INFO] Crossref query: air pollution 
+[2026-03-26 10:14:24] [INFO] arXiv query: air pollution 
+[2026-03-26 10:14:24] [INFO] Nacteno celkem 668 zaznamu z vedeckych API 
+[2026-03-26 10:14:24] [INFO] Po filtraci na interval zustalo 969 zaznamu 
+[2026-03-26 10:14:25] [INFO] Po matchi na klicova slova: 169 zaznamu 
+[2026-03-26 10:14:25] [INFO] Existujici vystup obsahuje 2 zaznamu 
+[2026-03-26 10:14:25] [INFO] Novy beh vytvoril 169 zaznamu 
+[2026-03-26 10:14:25] [INFO] Po slouceni a deduplikaci je ve vystupu 170 zaznamu 
+[2026-03-26 10:14:25] [INFO] Pribylo 168 novych zaznamu 
+[2026-03-26 10:14:25] [INFO] Hotovo. Ulozeno 170 zaznamu do source.csv 
