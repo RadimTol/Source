@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   library(xml2)
   library(tidyr)
   library(rvest)
+  library(jsonlite)
 })
 
 options(stringsAsFactors = FALSE)
@@ -16,6 +17,7 @@ options(stringsAsFactors = FALSE)
 default_keywords_file <- "keywords.txt"
 default_output_file   <- "source.csv"
 default_log_file      <- "news_monitor.log"
+api_contact_email    <- Sys.getenv("SCHOLARLY_API_EMAIL", unset = "")
 
 rss_feeds <- tribble(
   ~source,              ~url,
@@ -30,6 +32,31 @@ rss_feeds <- tribble(
   "NPR World",          "https://feeds.npr.org/1004/rss.xml",
   "Al Jazeera",         "https://www.aljazeera.com/xml/rss/all.xml",
   "Sky News World",     "https://feeds.skynews.com/feeds/rss/world.xml"
+)
+
+science_rss_feeds <- tribble(
+  ~source,                         ~url,
+  "Nature Climate",              "https://www.nature.com/nclimate.rss",
+  "Nature Sustainability",       "https://www.nature.com/natsustain.rss",
+  "PNAS",                        "https://www.pnas.org/action/showFeed?feed=rss&jc=PNAS&type=etoc",
+  "ScienceDaily Climate",        "https://www.sciencedaily.com/rss/earth_climate/climate.xml",
+  "ScienceDaily Global Warming", "https://www.sciencedaily.com/rss/earth_climate/global_warming.xml",
+  "ScienceDaily Environmental Issues", "https://www.sciencedaily.com/rss/earth_climate/environmental_issues.xml"
+)
+
+# Pouze pro vedecke zdroje: dotazy zamerene na klima a zivotni prostredi.
+# Samotne sparovani do skupin porad ridi obsah keywords.txt.
+science_search_terms <- c(
+  "climate change",
+  "global warming",
+  "climate extremes",
+  "environmental change",
+  "greenhouse gas emissions",
+  "drought",
+  "flood",
+  "heatwave",
+  "biodiversity loss",
+  "air pollution"
 )
 
 log_file <- default_log_file
@@ -53,6 +80,12 @@ if (date_to < date_from) stop("Koncove datum nesmi byt mensi nez pocatecni datum
 
 cat("", file = log_file, append = FALSE)
 log_msg("INFO", sprintf("Interval: %s -> %s", date_from, date_to))
+
+if (nzchar(api_contact_email)) {
+  log_msg("INFO", sprintf("Pro OpenAlex/Crossref bude pouzit kontakt %s", api_contact_email))
+} else {
+  log_msg("INFO", "SCHOLARLY_API_EMAIL neni nastaven. OpenAlex/Crossref pobezi bez identifikace kontaktu.")
+}
 
 strip_html <- function(x) {
   x <- ifelse(is.na(x), "", x)
@@ -120,25 +153,19 @@ read_keywords <- function(path) {
 
   parse_line <- function(line) {
     parts <- strsplit(line, "-", fixed = TRUE)[[1]]
-    if (length(parts) < 2) {
-      return(NULL)
-    }
+    if (length(parts) < 2) return(NULL)
 
     group_name <- str_squish(parts[1])
     keywords_part <- paste(parts[-1], collapse = "-")
     keywords_part <- str_squish(keywords_part)
 
-    if (!nzchar(group_name) || !nzchar(keywords_part)) {
-      return(NULL)
-    }
+    if (!nzchar(group_name) || !nzchar(keywords_part)) return(NULL)
 
     keywords <- strsplit(keywords_part, ";", fixed = TRUE)[[1]]
     keywords <- str_squish(keywords)
     keywords <- keywords[nzchar(keywords)]
 
-    if (length(keywords) == 0) {
-      return(NULL)
-    }
+    if (length(keywords) == 0) return(NULL)
 
     tibble(
       keyword_group = group_name,
@@ -213,11 +240,19 @@ extract_item_text <- function(node, xpath_candidates) {
   ""
 }
 
+safe_read_xml_url <- function(url) {
+  xml2::read_xml(url)
+}
+
+safe_read_json_url <- function(url) {
+  jsonlite::fromJSON(url, flatten = TRUE)
+}
+
 fetch_feed <- function(name, url) {
   log_msg("INFO", paste("Loading", name))
 
   tryCatch({
-    feed <- xml2::read_xml(url)
+    feed <- safe_read_xml_url(url)
 
     items <- xml2::xml_find_all(feed, ".//*[local-name()='item']")
     if (length(items) == 0) {
@@ -237,9 +272,7 @@ fetch_feed <- function(name, url) {
 
     out <- tibble(
       source = name,
-      title = vapply(items, function(item) {
-        extract_item_text(item, c(".//*[local-name()='title']"))
-      }, character(1)),
+      title = vapply(items, function(item) extract_item_text(item, c(".//*[local-name()='title']")), character(1)),
       link = vapply(items, get_link_atom, character(1)),
       summary_raw = vapply(items, function(item) {
         extract_item_text(item, c(
@@ -280,10 +313,232 @@ fetch_feed <- function(name, url) {
   })
 }
 
+decode_openalex_abstract <- function(idx) {
+  if (is.null(idx) || length(idx) == 0) return("")
+  words <- names(idx)
+  if (is.null(words) || length(words) == 0) return("")
+
+  positions <- unlist(idx, recursive = TRUE, use.names = FALSE)
+  if (length(positions) == 0) return("")
+
+  out <- rep("", max(positions) + 1)
+  for (i in seq_along(words)) {
+    pos <- unlist(idx[[i]], use.names = FALSE)
+    out[pos + 1] <- words[i]
+  }
+
+  str_squish(paste(out, collapse = " "))
+}
+
+build_openalex_url <- function(term, date_from, date_to, filter_expr, per_page = 100) {
+  base <- "https://api.openalex.org/works"
+  filter_parts <- c(
+    sprintf("from_publication_date:%s", date_from),
+    sprintf("to_publication_date:%s", date_to),
+    filter_expr
+  )
+
+  params <- c(
+    paste0("search=", URLencode(term, reserved = TRUE)),
+    paste0("filter=", URLencode(paste(filter_parts, collapse = ","), reserved = TRUE)),
+    paste0("per-page=", per_page),
+    paste0("select=", URLencode("id,doi,display_name,publication_date,abstract_inverted_index,primary_location", reserved = TRUE))
+  )
+
+  if (nzchar(api_contact_email)) {
+    params <- c(params, paste0("mailto=", URLencode(api_contact_email, reserved = TRUE)))
+  }
+
+  paste0(base, "?", paste(params, collapse = "&"))
+}
+
+fetch_openalex_once <- function(term, date_from, date_to, filter_expr, filter_label) {
+  log_msg("INFO", sprintf("OpenAlex query: %s [%s]", term, filter_label))
+
+  tryCatch({
+    x <- safe_read_json_url(build_openalex_url(term, date_from, date_to, filter_expr))
+    items <- x$results
+    if (is.null(items) || nrow(items) == 0) return(tibble())
+
+    items <- tibble::as_tibble(items)
+    landing_page <- rep(NA_character_, nrow(items))
+    if ("primary_location.landing_page_url" %in% names(items)) {
+      landing_page <- items[["primary_location.landing_page_url"]]
+    }
+
+    items %>%
+      mutate(
+        source = "OpenAlex",
+        title = str_squish(strip_html(display_name)),
+        link = dplyr::coalesce(landing_page, doi, id),
+        link = ifelse(!is.na(link) & str_detect(link, "^10\\."), paste0("https://doi.org/", link), link),
+        summary_raw = vapply(abstract_inverted_index, decode_openalex_abstract, character(1)),
+        date = as.Date(publication_date),
+        link_norm = normalize_link(link)
+      ) %>%
+      transmute(source, title, link, summary_raw, date, link_norm) %>%
+      filter(!is.na(date), date >= date_from, date <= date_to, !is.na(link), nzchar(link))
+  }, error = function(e) {
+    log_msg("WARN", paste("OpenAlex failed for", term, "-", e$message))
+    tibble()
+  })
+}
+
+fetch_openalex_term <- function(term, date_from, date_to) {
+  bind_rows(
+    # SDG 13 = Climate Action
+    fetch_openalex_once(term, date_from, date_to,
+                        "sustainable_development_goals.id:https://metadata.un.org/sdg/13",
+                        "SDG13"),
+    # Field 23 = Environmental Science
+    fetch_openalex_once(term, date_from, date_to,
+                        "primary_topic.field.id:23",
+                        "EnvironmentalScience")
+  ) %>%
+    distinct(link_norm, title, .keep_all = TRUE)
+}
+
+build_crossref_url <- function(term, date_from, date_to, rows = 100) {
+  base <- "https://api.crossref.org/works"
+  filter_parts <- c(
+    sprintf("from-pub-date:%s", date_from),
+    sprintf("until-pub-date:%s", date_to),
+    "type:journal-article"
+  )
+
+  params <- c(
+    paste0("query.bibliographic=", URLencode(term, reserved = TRUE)),
+    paste0("filter=", URLencode(paste(filter_parts, collapse = ","), reserved = TRUE)),
+    paste0("rows=", rows),
+    "select=DOI,URL,title,abstract,published-print,published-online,created,container-title,subject"
+  )
+
+  if (nzchar(api_contact_email)) {
+    params <- c(params, paste0("mailto=", URLencode(api_contact_email, reserved = TRUE)))
+  }
+
+  paste0(base, "?", paste(params, collapse = "&"))
+}
+
+is_climate_subject <- function(subjects) {
+  if (is.null(subjects) || length(subjects) == 0) return(FALSE)
+  txt <- str_to_lower(paste(unlist(subjects), collapse = " "))
+  str_detect(txt, "climat|environment|ecolog|sustainab|atmospher|pollution|biodivers|carbon|energy|hydrolog|water")
+}
+
+fetch_crossref_term <- function(term, date_from, date_to) {
+  log_msg("INFO", sprintf("Crossref query: %s", term))
+
+  tryCatch({
+    x <- safe_read_json_url(build_crossref_url(term, date_from, date_to))
+    items <- x$message$items
+    if (is.null(items) || nrow(items) == 0) return(tibble())
+
+    pick_date <- function(row) {
+      for (col in c("published.print.date-parts", "published.online.date-parts", "created.date-parts")) {
+        if (!col %in% names(row)) next
+        val <- row[[col]][[1]]
+        if (length(val) >= 1) {
+          year <- val[1]
+          month <- ifelse(length(val) >= 2, val[2], 1)
+          day <- ifelse(length(val) >= 3, val[3], 1)
+          return(as.Date(sprintf("%04d-%02d-%02d", year, month, day)))
+        }
+      }
+      as.Date(NA)
+    }
+
+    tibble::as_tibble(items) %>%
+      mutate(
+        title = vapply(title, function(v) if (length(v) > 0) v[[1]] else "", character(1)),
+        summary_raw = if ("abstract" %in% names(.)) strip_html(abstract) else "",
+        date = as.Date(vapply(seq_len(n()), function(i) pick_date(as.list(.[i, , drop = FALSE])), as.Date(NA)), origin = "1970-01-01"),
+        source = if ("container.title" %in% names(.)) {
+          ct <- `container.title`
+          ct <- vapply(ct, function(v) if (length(v) > 0) v[[1]] else "", character(1))
+          ifelse(nzchar(ct), paste0("Crossref / ", ct), "Crossref")
+        } else {
+          "Crossref"
+        },
+        link = dplyr::coalesce(URL, ifelse(!is.na(DOI) & nzchar(DOI), paste0("https://doi.org/", DOI), NA_character_)),
+        climate_ok = if ("subject" %in% names(.)) vapply(subject, is_climate_subject, logical(1)) else TRUE,
+        link_norm = normalize_link(link)
+      ) %>%
+      transmute(source, title = str_squish(strip_html(title)), link, summary_raw, date, link_norm, climate_ok) %>%
+      filter(climate_ok, !is.na(date), date >= date_from, date <= date_to, !is.na(link), nzchar(link)) %>%
+      select(-climate_ok)
+  }, error = function(e) {
+    log_msg("WARN", paste("Crossref failed for", term, "-", e$message))
+    tibble()
+  })
+}
+
+build_arxiv_url <- function(term, max_results = 50) {
+  paste0(
+    "http://export.arxiv.org/api/query?search_query=all:", URLencode(term, reserved = TRUE),
+    "&start=0&max_results=", max_results,
+    "&sortBy=submittedDate&sortOrder=descending"
+  )
+}
+
+fetch_arxiv_term <- function(term, date_from, date_to) {
+  log_msg("INFO", sprintf("arXiv query: %s", term))
+
+  tryCatch({
+    feed <- safe_read_xml_url(build_arxiv_url(term))
+    entries <- xml2::xml_find_all(feed, ".//*[local-name()='entry']")
+    if (length(entries) == 0) return(tibble())
+
+    get_text <- function(node, name) {
+      val <- xml2::xml_text(xml2::xml_find_first(node, paste0(".//*[local-name()='", name, "']")))
+      ifelse(is.na(val), "", val)
+    }
+
+    get_link <- function(node) {
+      link_node <- xml2::xml_find_first(node, ".//*[local-name()='link'][@rel='alternate']")
+      href <- xml2::xml_attr(link_node, "href")
+      if (!is.na(href) && nzchar(href)) return(href)
+      get_text(node, "id")
+    }
+
+    tibble(
+      source = "arXiv",
+      title = vapply(entries, function(e) get_text(e, "title"), character(1)),
+      link = vapply(entries, get_link, character(1)),
+      summary_raw = vapply(entries, function(e) get_text(e, "summary"), character(1)),
+      date = as.Date(vapply(entries, function(e) get_text(e, "published"), character(1))),
+      link_norm = normalize_link(vapply(entries, get_link, character(1)))
+    ) %>%
+      mutate(
+        title = str_squish(strip_html(title)),
+        summary_raw = str_squish(strip_html(summary_raw))
+      ) %>%
+      filter(!is.na(date), date >= date_from, date <= date_to, !is.na(link), nzchar(link))
+  }, error = function(e) {
+    log_msg("WARN", paste("arXiv failed for", term, "-", e$message))
+    tibble()
+  })
+}
+
+fetch_science_api_results <- function(date_from, date_to) {
+  all_terms <- unique(science_search_terms)
+
+  purrr::map_dfr(all_terms, function(term) {
+    Sys.sleep(0.2)
+    bind_rows(
+      fetch_openalex_term(term, date_from, date_to),
+      fetch_crossref_term(term, date_from, date_to),
+      fetch_arxiv_term(term, date_from, date_to)
+    )
+  }) %>%
+    distinct(link_norm, title, source, .keep_all = TRUE)
+}
+
 extract_article_text <- function(link) {
   if (is.na(link) || !nzchar(link)) return("")
+  if (str_detect(link, "doi\\.org|arxiv\\.org|openalex\\.org")) return("")
 
-  out <- tryCatch({
+  tryCatch({
     page <- read_html(link)
 
     selectors <- c(
@@ -308,8 +563,6 @@ extract_article_text <- function(link) {
     log_msg("WARN", paste("Article fallback failed for", link, "-", e$message))
     ""
   })
-
-  out
 }
 
 build_abstract <- function(summary_raw, link, max_sentences = 3, max_chars = 550) {
@@ -335,14 +588,13 @@ match_keywords <- function(news_df, keywords_df) {
   news_df %>%
     mutate(search_text = str_to_lower(paste(title, summary_raw, sep = " "))) %>%
     tidyr::crossing(keywords_df) %>%
-    rowwise() %>%
     mutate(
-      hit = if (!is.na(keyword_term) && nzchar(keyword_term)) {
-        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_term), "\\b"), ignore_case = TRUE))
-      } else FALSE
+      matched = str_detect(
+        search_text,
+        regex(paste0("\\b", escape_regex(keyword_term), "\\b"), ignore_case = TRUE)
+      )
     ) %>%
-    ungroup() %>%
-    filter(hit) %>%
+    filter(matched) %>%
     mutate(keyword = keyword_group) %>%
     distinct(link_norm, keyword, .keep_all = TRUE)
 }
@@ -359,7 +611,7 @@ read_existing_results <- function(path) {
     ))
   }
 
-  out <- tryCatch({
+  tryCatch({
     df <- suppressMessages(readr::read_csv(path, show_col_types = FALSE))
     required_cols <- c("date", "keyword", "source", "link", "abstract")
 
@@ -396,8 +648,6 @@ read_existing_results <- function(path) {
       link_norm = character()
     )
   })
-
-  out
 }
 
 merge_results <- function(new_results, output_path) {
@@ -429,34 +679,44 @@ merge_results <- function(new_results, output_path) {
 }
 
 keywords <- read_keywords(default_keywords_file)
-log_msg("INFO", sprintf("Nacteno %d vazeb skupina->klicove slovo z %s", nrow(keywords), default_keywords_file))
+log_msg("INFO", sprintf("Nacteno %d klicovych termu v %d skupinach z %s",
+                         nrow(keywords), n_distinct(keywords$keyword_group), default_keywords_file))
 
 all_news <- purrr::map2_dfr(rss_feeds$source, rss_feeds$url, fetch_feed)
-log_msg("INFO", sprintf("Nacteno celkem %d RSS zaznamu", nrow(all_news)))
+log_msg("INFO", sprintf("Nacteno celkem %d zaznamu ze zpravodajskych RSS", nrow(all_news)))
 
-if (nrow(all_news) == 0) {
-  log_msg("WARN", "Nepodarilo se nacist zadna RSS data.")
+all_science_rss <- purrr::map2_dfr(science_rss_feeds$source, science_rss_feeds$url, fetch_feed)
+log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych RSS", nrow(all_science_rss)))
+
+all_science_api <- fetch_science_api_results(date_from, date_to)
+log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych API", nrow(all_science_api)))
+
+all_items <- bind_rows(all_news, all_science_rss, all_science_api) %>%
+  mutate(date = as.Date(date))
+
+if (nrow(all_items) == 0) {
+  log_msg("WARN", "Nepodarilo se nacist zadna data ani ze zpravodajskych, ani z vedeckych zdroju.")
   existing_results <- read_existing_results(default_output_file) %>%
     select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
   quit(save = "no")
 }
 
-filtered_news <- all_news %>%
+filtered_items <- all_items %>%
   filter(!is.na(date)) %>%
   filter(date >= date_from, date <= date_to)
 
-log_msg("INFO", sprintf("Po filtraci na interval zustalo %d zaznamu", nrow(filtered_news)))
+log_msg("INFO", sprintf("Po filtraci na interval zustalo %d zaznamu", nrow(filtered_items)))
 
-if (nrow(filtered_news) == 0) {
-  log_msg("WARN", "V danem intervalu nebyly v RSS feedech nalezeny zadne zaznamy.")
+if (nrow(filtered_items) == 0) {
+  log_msg("WARN", "V danem intervalu nebyly nalezeny zadne zaznamy.")
   existing_results <- read_existing_results(default_output_file) %>%
     select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
   quit(save = "no")
 }
 
-results <- match_keywords(filtered_news, keywords)
+results <- match_keywords(filtered_items, keywords)
 log_msg("INFO", sprintf("Po matchi na klicova slova: %d zaznamu", nrow(results)))
 
 if (nrow(results) > 0) {
