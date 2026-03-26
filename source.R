@@ -118,20 +118,43 @@ read_keywords <- function(path) {
   raw <- raw[nzchar(raw)]
   if (length(raw) == 0) stop("Soubor keywords.txt je prazdny.")
 
-  parsed <- str_split_fixed(raw, ";", 2)
+  parse_line <- function(line) {
+    parts <- strsplit(line, "-", fixed = TRUE)[[1]]
+    if (length(parts) < 2) {
+      return(NULL)
+    }
 
-  out <- tibble(
-    keyword_cz = str_squish(parsed[, 1]),
-    keyword_en = str_squish(parsed[, 2])
-  ) %>%
-    mutate(
-      keyword_cz = na_if(keyword_cz, ""),
-      keyword_en = na_if(keyword_en, "")
-    ) %>%
-    filter(!(is.na(keyword_cz) & is.na(keyword_en)))
+    group_name <- str_squish(parts[1])
+    keywords_part <- paste(parts[-1], collapse = "-")
+    keywords_part <- str_squish(keywords_part)
 
-  if (nrow(out) == 0) stop("V keywords.txt nebyly nalezeny validni dvojice 'cz;en'.")
-  out
+    if (!nzchar(group_name) || !nzchar(keywords_part)) {
+      return(NULL)
+    }
+
+    keywords <- strsplit(keywords_part, ";", fixed = TRUE)[[1]]
+    keywords <- str_squish(keywords)
+    keywords <- keywords[nzchar(keywords)]
+
+    if (length(keywords) == 0) {
+      return(NULL)
+    }
+
+    tibble(
+      keyword_group = group_name,
+      keyword_term = keywords
+    )
+  }
+
+  out <- purrr::map(raw, parse_line) %>%
+    purrr::compact() %>%
+    bind_rows()
+
+  if (nrow(out) == 0) {
+    stop("V keywords.txt nebyly nalezeny validni skupiny ve formatu 'Nazev-klicove_slovo_1;klicove_slovo_2;...'.")
+  }
+
+  out %>% distinct(keyword_group, keyword_term)
 }
 
 parse_pub_datetime <- function(x) {
@@ -314,22 +337,13 @@ match_keywords <- function(news_df, keywords_df) {
     tidyr::crossing(keywords_df) %>%
     rowwise() %>%
     mutate(
-      hit_cz = if (!is.na(keyword_cz) && nzchar(keyword_cz)) {
-        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_cz), "\\b"), ignore_case = TRUE))
-      } else FALSE,
-      hit_en = if (!is.na(keyword_en) && nzchar(keyword_en)) {
-        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_en), "\\b"), ignore_case = TRUE))
+      hit = if (!is.na(keyword_term) && nzchar(keyword_term)) {
+        str_detect(search_text, regex(paste0("\\b", escape_regex(keyword_term), "\\b"), ignore_case = TRUE))
       } else FALSE
     ) %>%
     ungroup() %>%
-    filter(hit_cz | hit_en) %>%
-    mutate(
-      keyword = case_when(
-        hit_cz & !is.na(keyword_cz) ~ keyword_cz,
-        hit_en & !is.na(keyword_en) ~ keyword_en,
-        TRUE ~ dplyr::coalesce(keyword_cz, keyword_en)
-      )
-    ) %>%
+    filter(hit) %>%
+    mutate(keyword = keyword_group) %>%
     distinct(link_norm, keyword, .keep_all = TRUE)
 }
 
@@ -415,7 +429,7 @@ merge_results <- function(new_results, output_path) {
 }
 
 keywords <- read_keywords(default_keywords_file)
-log_msg("INFO", sprintf("Nacteno %d dvojic klicovych slov z %s", nrow(keywords), default_keywords_file))
+log_msg("INFO", sprintf("Nacteno %d vazeb skupina->klicove slovo z %s", nrow(keywords), default_keywords_file))
 
 all_news <- purrr::map2_dfr(rss_feeds$source, rss_feeds$url, fetch_feed)
 log_msg("INFO", sprintf("Nacteno celkem %d RSS zaznamu", nrow(all_news)))
