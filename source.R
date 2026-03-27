@@ -461,7 +461,8 @@ fetch_crossref_term <- function(term, date_from, date_to) {
       date = vapply(seq_len(n_items), function(i) as.character(pick_date(as.list(items[i, , drop = FALSE]))), character(1)),
       source = if ("container.title" %in% names(items)) {
         ct <- purrr::map_chr(items[["container.title"]], ~ if (length(.x) > 0) as.character(.x[[1]]) else "")
-        ifelse(nzchar(ct), paste0("Crossref / ", ct), "Crossref")
+        ct <- str_squish(strip_html(ct))
+        ifelse(nzchar(ct), paste0("Crossref/", ct), "Crossref")
       } else {
         rep("Crossref", n_items)
       },
