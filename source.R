@@ -459,12 +459,17 @@ fetch_crossref_term <- function(term, date_from, date_to) {
       title = if ("title" %in% names(items)) purrr::map_chr(items$title, ~ if (length(.x) > 0) as.character(.x[[1]]) else "") else rep("", n_items),
       summary_raw = if ("abstract" %in% names(items)) strip_html(as.character(items$abstract)) else rep("", n_items),
       date = vapply(seq_len(n_items), function(i) as.character(pick_date(as.list(items[i, , drop = FALSE]))), character(1)),
-      source = if ("container.title" %in% names(items)) {
-        ct <- purrr::map_chr(items[["container.title"]], ~ if (length(.x) > 0) as.character(.x[[1]]) else "")
-        ct <- str_squish(strip_html(ct))
-        ifelse(nzchar(ct), paste0("Crossref/", ct), "Crossref")
-      } else {
-        rep("Crossref", n_items)
+      source = {
+        container_col <- intersect(c("container.title", "container-title"), names(items))
+        if (length(container_col) > 0) {
+          ct <- purrr::map_chr(items[[container_col[[1]]]], ~ {
+            if (length(.x) > 0) as.character(.x[[1]]) else ""
+          })
+          ct <- str_squish(strip_html(ct))
+          ifelse(nzchar(ct), paste0("Crossref/", ct), "Crossref")
+        } else {
+          rep("Crossref", n_items)
+        }
       },
       link = dplyr::coalesce(if ("URL" %in% names(items)) as.character(items$URL) else rep(NA_character_, n_items), if ("DOI" %in% names(items)) ifelse(!is.na(items$DOI) & nzchar(items$DOI), paste0("https://doi.org/", items$DOI), NA_character_) else rep(NA_character_, n_items)),
       climate_ok = if ("subject" %in% names(items)) purrr::map_lgl(items$subject, is_climate_subject) else rep(TRUE, n_items)
