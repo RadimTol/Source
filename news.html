@@ -238,6 +238,9 @@
     }
 
     @media (max-width: 768px) {
+      header { padding: 16px 12px; }
+      h1 { font-size: 22px; }
+
       .header-flex {
         flex-direction: column;
         align-items: flex-start;
@@ -247,6 +250,10 @@
         width: 100%;
         text-align: center;
       }
+
+      .page { padding: 14px 12px 28px; }
+      .filters { padding: 14px; border-radius: 12px; }
+      .filters-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -264,7 +271,109 @@
     </div>
   </header>
 
-  <!-- ZBYTEK TVÉHO PŮVODNÍHO HTML + JS ZŮSTÁVÁ BEZE ZMĚNY -->
+  <main class="page">
+    <section class="filters">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="keywordFilter">Téma</label>
+          <select id="keywordFilter"><option value="">Všechna témata</option></select>
+        </div>
+
+        <div class="filter-group">
+          <label for="sourceFilter">Zdroj</label>
+          <select id="sourceFilter"><option value="">Všechny zdroje</option></select>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="result-count" id="resultCount">Načítám data…</div>
+        <button class="reset-btn" id="resetFilters">Zrušit filtry</button>
+      </div>
+    </section>
+
+    <section class="news-list" id="newsList"></section>
+    <div class="footer-note">Kliknutím na abstrakt otevřeš původní článek.</div>
+  </main>
+
+  <script>
+    let allRows = [];
+
+    function sanitize(value) {
+      return (value || "").toString().trim();
+    }
+
+    function populateFilters(rows) {
+      const keywordFilter = document.getElementById("keywordFilter");
+      const sourceFilter = document.getElementById("sourceFilter");
+
+      const keywords = [...new Set(rows.map(r => sanitize(r.keyword)).filter(Boolean))];
+      const sources = [...new Set(rows.map(r => sanitize(r.source)).filter(Boolean))];
+
+      keywords.forEach(k => {
+        const o = document.createElement("option");
+        o.value = k;
+        o.textContent = k;
+        keywordFilter.appendChild(o);
+      });
+
+      sources.forEach(s => {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        sourceFilter.appendChild(o);
+      });
+    }
+
+    function renderRows() {
+      const keywordValue = document.getElementById("keywordFilter").value;
+      const sourceValue = document.getElementById("sourceFilter").value;
+      const newsList = document.getElementById("newsList");
+
+      const filtered = allRows.filter(r =>
+        (!keywordValue || r.keyword === keywordValue) &&
+        (!sourceValue || r.source === sourceValue)
+      );
+
+      newsList.innerHTML = "";
+
+      filtered.forEach(row => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="meta-row">
+              <span class="meta-pill">${row.date}</span>
+              <span class="meta-pill topic">${row.keyword}</span>
+              <span class="meta-pill source">${row.source}</span>
+            </div>
+            <a class="abstract-link" href="${row.link}" target="_blank">${row.abstract}</a>
+          </div>
+        `;
+
+        newsList.appendChild(card);
+      });
+
+      document.getElementById("resultCount").textContent =
+        `Počet článků: ${filtered.length}`;
+    }
+
+    document.getElementById("resetFilters").onclick = () => {
+      document.getElementById("keywordFilter").value = "";
+      document.getElementById("sourceFilter").value = "";
+      renderRows();
+    };
+
+    Papa.parse("source.csv", {
+      download: true,
+      header: true,
+      complete: function(results) {
+        allRows = results.data;
+        populateFilters(allRows);
+        renderRows();
+      }
+    });
+  </script>
 
 </body>
 </html>
