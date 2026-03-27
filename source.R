@@ -14,10 +14,11 @@ suppressPackageStartupMessages({
 
 options(stringsAsFactors = FALSE)
 
-default_keywords_file <- "keywords.txt"
-default_output_file   <- "source.csv"
-default_log_file      <- "news_monitor.log"
-api_contact_email    <- Sys.getenv("SCHOLARLY_API_EMAIL", unset = "")
+default_keywords_file        <- "keywords.txt"
+default_output_file          <- "source.csv"
+default_crossref_output_file <- "source-crossref.csv"
+default_log_file             <- "news_monitor.log"
+api_contact_email            <- Sys.getenv("SCHOLARLY_API_EMAIL", unset = "")
 
 rss_feeds <- tribble(
   ~source,              ~url,
@@ -647,8 +648,16 @@ all_items <- bind_rows(all_news, all_science_rss, all_science_api) %>% mutate(da
 
 if (nrow(all_items) == 0) {
   log_msg("WARN", "Nepodarilo se nacist zadna data ani ze zpravodajskych, ani z vedeckych zdroju.")
-  existing_results <- read_existing_results(default_output_file) %>% select(date, keyword, source, link, abstract)
+
+  existing_results <- read_existing_results(default_output_file) %>%
+    filter(!str_detect(source, "^Crossref")) %>%
+    select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
+
+  existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
+    select(date, keyword, source, link, abstract)
+  readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
+
   quit(save = "no")
 }
 
@@ -657,8 +666,16 @@ log_msg("INFO", sprintf("Po filtraci na interval zustalo %d zaznamu", nrow(filte
 
 if (nrow(filtered_items) == 0) {
   log_msg("WARN", "V danem intervalu nebyly nalezeny zadne zaznamy.")
-  existing_results <- read_existing_results(default_output_file) %>% select(date, keyword, source, link, abstract)
+
+  existing_results <- read_existing_results(default_output_file) %>%
+    filter(!str_detect(source, "^Crossref")) %>%
+    select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
+
+  existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
+    select(date, keyword, source, link, abstract)
+  readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
+
   quit(save = "no")
 }
 
@@ -675,6 +692,21 @@ if (nrow(results) > 0) {
   results <- tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character())
 }
 
-final_results <- merge_results(results, default_output_file) %>% select(date, keyword, source, link, abstract)
+crossref_results <- results %>%
+  filter(str_detect(source, "^Crossref"))
+
+non_crossref_results <- results %>%
+  filter(!str_detect(source, "^Crossref"))
+
+final_results <- merge_results(non_crossref_results, default_output_file) %>%
+  filter(!str_detect(source, "^Crossref")) %>%
+  select(date, keyword, source, link, abstract)
+
 readr::write_excel_csv(final_results, default_output_file)
 log_msg("INFO", sprintf("Hotovo. Ulozeno %d zaznamu do %s", nrow(final_results), default_output_file))
+
+final_crossref_results <- merge_results(crossref_results, default_crossref_output_file) %>%
+  select(date, keyword, source, link, abstract)
+
+readr::write_excel_csv(final_crossref_results, default_crossref_output_file)
+log_msg("INFO", sprintf("Hotovo. Ulozeno %d zaznamu do %s", nrow(final_crossref_results), default_crossref_output_file))
