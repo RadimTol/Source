@@ -27,6 +27,8 @@ rss_feeds <- tribble(
   "Novinky",            "https://www.novinky.cz/rss",
   "Seznam Zpravy",      "https://www.seznamzpravy.cz/rss",
   "Denik N",            "https://denikn.cz/feed/",
+  "Reflex",             "https://www.reflex.cz/rss",
+  "Respekt",            "https://www.respekt.cz/rss",
   "BBC World",          "http://feeds.bbci.co.uk/news/world/rss.xml",
   "The Guardian World", "https://www.theguardian.com/world/rss",
   "NYTimes World",      "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
@@ -547,6 +549,9 @@ fetch_science_api_results <- function(date_from, date_to) {
 extract_article_text <- function(link) {
   if (is.na(link) || !nzchar(link)) return("")
   if (str_detect(link, "doi\\.org|arxiv\\.org|openalex\\.org")) return("")
+
+  # Neprovadet fallback scraping u zdroju s citlivejsimi licencnimi podminkami / paywallem.
+  if (str_detect(link, "respekt\\.cz|reflex\\.cz")) return("")
 
   tryCatch({
     page <- read_html(link)
