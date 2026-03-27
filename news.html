@@ -368,10 +368,22 @@
       download: true,
       header: true,
       complete: function(results) {
-        allRows = results.data;
-        populateFilters(allRows);
-        renderRows();
-      }
+        allRows = (results.data || [])
+        .map(row => ({
+        date: sanitize(row.date),
+        keyword: sanitize(row.keyword),
+        source: sanitize(row.source),
+        link: sanitize(row.link),
+        abstract: sanitize(row.abstract)
+        }))
+       .filter(row => row.date && row.link);
+
+     populateFilters(allRows);
+     bindEvents();
+     renderRows();
+     setTitleFromHeaderDate();  // ← tohle chybělo
+  }
+          
     });
   </script>
 
