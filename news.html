@@ -246,11 +246,11 @@
       const kf=document.getElementById("keywordFilter");
       const sf=document.getElementById("sourceFilter");
 
-      [...new Set(rows.map(r=>r.keyword))].forEach(v=>{
+      [...new Set(rows.map(r=>r.keyword).filter(Boolean))].forEach(v=>{
         const o=document.createElement("option"); o.value=v; o.textContent=v; kf.appendChild(o);
       });
 
-      [...new Set(rows.map(r=>r.source))].forEach(v=>{
+      [...new Set(rows.map(r=>r.source).filter(Boolean))].forEach(v=>{
         const o=document.createElement("option"); o.value=v; o.textContent=v; sf.appendChild(o);
       });
     }
@@ -285,6 +285,9 @@
       document.getElementById("sourceFilter").value="";
       renderRows();
     };
+
+    document.getElementById("keywordFilter").addEventListener("change", renderRows);
+    document.getElementById("sourceFilter").addEventListener("change", renderRows);
 
     Papa.parse("source.csv",{
       download:true,
