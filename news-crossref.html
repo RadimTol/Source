@@ -43,6 +43,29 @@
       margin: 0 auto;
     }
 
+    .header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      background: #fff;
+      color: #222;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+    }
+
+    .back-btn:hover {
+      background: var(--main-dark);
+    }
+
     h1 {
       margin: 0;
       font-size: 28px;
@@ -224,6 +247,16 @@
         font-size: 22px;
       }
 
+      .header-flex {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .back-btn {
+        width: 100%;
+        text-align: center;
+      }
+
       .page {
         padding: 14px 12px 28px;
       }
@@ -264,9 +297,12 @@
 <body>
 
   <header>
-    <div class="header-inner">
-      <h1 id="page-title">Přehled článků</h1>
-      <div class="subhead">Automaticky generovaný přehled ze souboru source-crossref.csv</div>
+    <div class="header-inner header-flex">
+      <div>
+        <h1 id="page-title">Přehled článků</h1>
+        <div class="subhead">Automaticky generovaný přehled ze souboru source-crossref.csv</div>
+      </div>
+      <a href="news.html" class="back-btn">Zpět</a>
     </div>
   </header>
 
