@@ -93,9 +93,9 @@ cat("", file = log_file, append = FALSE)
 log_msg("INFO", sprintf("Interval: %s -> %s", date_from, date_to))
 
 if (nzchar(api_contact_email)) {
-  log_msg("INFO", sprintf("Pro OpenAlex/Crossref bude pouzit kontakt %s", api_contact_email))
+  log_msg("INFO", sprintf("Pro Crossref bude pouzit kontakt %s", api_contact_email))
 } else {
-  log_msg("INFO", "SCHOLARLY_API_EMAIL neni nastaven. OpenAlex/Crossref pobezi bez identifikace kontaktu.")
+  log_msg("INFO", "SCHOLARLY_API_EMAIL neni nastaven. Crossref pobezi bez identifikace kontaktu.")
 }
 
 strip_html <- function(x) {
@@ -316,116 +316,6 @@ fetch_feed <- function(name, url) {
   })
 }
 
-decode_openalex_abstract <- function(idx) {
-  if (is.null(idx) || length(idx) == 0) return("")
-  if (!is.list(idx)) return("")
-  words <- names(idx)
-  if (is.null(words) || length(words) == 0) return("")
-
-  positions <- unlist(idx, recursive = TRUE, use.names = FALSE)
-  positions <- suppressWarnings(as.integer(positions))
-  positions <- positions[!is.na(positions)]
-  if (length(positions) == 0) return("")
-
-  out <- rep("", max(positions) + 1)
-  for (i in seq_along(words)) {
-    pos <- suppressWarnings(as.integer(unlist(idx[[i]], use.names = FALSE)))
-    pos <- pos[!is.na(pos)]
-    if (length(pos) == 0) next
-    out[pos + 1] <- words[i]
-  }
-  str_squish(paste(out, collapse = " "))
-}
-
-build_openalex_url <- function(term, date_from, date_to, per_page = 100) {
-  base <- "https://api.openalex.org/works"
-  filter_parts <- c(
-    sprintf("from_publication_date:%s", date_from),
-    sprintf("to_publication_date:%s", date_to)
-  )
-
-  params <- c(
-    paste0("search=", URLencode(term, reserved = TRUE)),
-    paste0("filter=", URLencode(paste(filter_parts, collapse = ","), reserved = TRUE)),
-    paste0("per-page=", per_page),
-    paste0("select=", URLencode("id,doi,display_name,publication_date,abstract_inverted_index,primary_location", reserved = TRUE))
-  )
-
-  if (nzchar(api_contact_email)) params <- c(params, paste0("mailto=", URLencode(api_contact_email, reserved = TRUE)))
-  paste0(base, "?", paste(params, collapse = "&"))
-}
-
-fetch_openalex_term <- function(term, date_from, date_to) {
-  log_msg("INFO", sprintf("OpenAlex query: %s", term))
-
-  tryCatch({
-    x <- safe_read_json_url(build_openalex_url(term, date_from, date_to))
-    items <- x$results
-    if (is.null(items) || length(items) == 0) {
-      log_msg("INFO", sprintf("OpenAlex returned 0 items for %s", term))
-      return(empty_items_tbl())
-    }
-
-    items <- tibble::as_tibble(items)
-    n_items <- nrow(items)
-    if (is.null(n_items) || n_items == 0) {
-      log_msg("INFO", sprintf("OpenAlex returned 0 rows for %s", term))
-      return(empty_items_tbl())
-    }
-
-    log_msg("INFO", sprintf("OpenAlex returned %d items for %s", n_items, term))
-
-    landing_page <- rep(NA_character_, n_items)
-    if ("primary_location.landing_page_url" %in% names(items)) {
-      landing_page <- as.character(items[["primary_location.landing_page_url"]])
-    }
-
-    title_text <- str_squish(strip_html(
-      if ("display_name" %in% names(items)) as.character(items$display_name) else rep("", n_items)
-    ))
-
-    abstract_text <- rep("", n_items)
-    if ("abstract_inverted_index" %in% names(items)) {
-      abstract_text <- purrr::map_chr(items$abstract_inverted_index, decode_openalex_abstract)
-    }
-    abstract_text <- str_squish(strip_html(abstract_text))
-
-    summary_text <- ifelse(nzchar(abstract_text), abstract_text, title_text)
-
-    out <- tibble(
-      source = "OpenAlex",
-      title = title_text,
-      link = dplyr::coalesce(
-        landing_page,
-        if ("doi" %in% names(items)) as.character(items$doi) else rep(NA_character_, n_items),
-        if ("id" %in% names(items)) as.character(items$id) else rep(NA_character_, n_items)
-      ),
-      summary_raw = summary_text,
-      date = as.Date(if ("publication_date" %in% names(items)) as.character(items$publication_date) else rep(NA_character_, n_items))
-    ) %>%
-      mutate(
-        link = ifelse(!is.na(link) & str_detect(link, "^10\\."), paste0("https://doi.org/", link), link),
-        link_norm = normalize_link(link)
-      ) %>%
-      filter(
-        !is.na(date), date >= date_from, date <= date_to,
-        !is.na(link), nzchar(link),
-        !is.na(title), nzchar(title)
-      ) %>%
-      distinct(link_norm, title, .keep_all = TRUE)
-
-    if (nrow(out) == 0) {
-      log_msg("INFO", sprintf("OpenAlex yielded no usable items after filtering for %s", term))
-      return(empty_items_tbl())
-    }
-
-    out %>% select(source, title, link, summary_raw, date, link_norm)
-  }, error = function(e) {
-    log_msg("WARN", paste("OpenAlex failed for", term, "-", e$message))
-    empty_items_tbl()
-  })
-}
-
 build_crossref_url <- function(term, date_from, date_to, rows = 100) {
   base <- "https://api.crossref.org/works"
   filter_parts <- c(
@@ -561,7 +451,6 @@ fetch_science_api_results <- function(date_from, date_to) {
   out <- purrr::map_dfr(all_terms, function(term) {
     Sys.sleep(0.2)
     bind_rows(
-      fetch_openalex_term(term, date_from, date_to),
       fetch_crossref_term(term, date_from, date_to),
       fetch_arxiv_term(term, date_from, date_to)
     )
@@ -573,7 +462,7 @@ fetch_science_api_results <- function(date_from, date_to) {
 
 extract_article_text <- function(link) {
   if (is.na(link) || !nzchar(link)) return("")
-  if (str_detect(link, "doi\\.org|arxiv\\.org|openalex\\.org")) return("")
+  if (str_detect(link, "doi\\.org|arxiv\\.org")) return("")
 
   if (str_detect(link, "respekt\\.cz|reflex\\.cz")) return("")
 
