@@ -73,6 +73,17 @@ empty_items_tbl <- function() {
   )
 }
 
+empty_crossref_tbl <- function() {
+  tibble(
+    date = as.Date(character()),
+    keyword = character(),
+    source = character(),
+    link = character(),
+    abstract = character(),
+    link_norm = character()
+  )
+}
+
 log_msg <- function(level, text) {
   line <- sprintf("[%s] [%s] %s", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), level, text)
   cat(line, "\n")
@@ -252,8 +263,43 @@ extract_item_text <- function(node, xpath_candidates) {
   ""
 }
 
-safe_read_xml_url <- function(url) xml2::read_xml(url)
-safe_read_json_url <- function(url) jsonlite::fromJSON(url, flatten = TRUE)
+safe_read_xml_url <- function(url, attempts = 4, sleep_seconds = 10) {
+  last_error <- NULL
+  for (i in seq_len(attempts)) {
+    out <- tryCatch(
+      xml2::read_xml(url),
+      error = function(e) {
+        last_error <<- e
+        NULL
+      }
+    )
+    if (!is.null(out)) return(out)
+    if (i < attempts) {
+      log_msg("WARN", sprintf("XML se nepodarilo nacist, pokus %d/%d: %s", i, attempts, url))
+      Sys.sleep(sleep_seconds)
+    }
+  }
+  stop(conditionMessage(last_error))
+}
+
+safe_read_json_url <- function(url, attempts = 4, sleep_seconds = 10) {
+  last_error <- NULL
+  for (i in seq_len(attempts)) {
+    out <- tryCatch(
+      jsonlite::fromJSON(url, flatten = TRUE),
+      error = function(e) {
+        last_error <<- e
+        NULL
+      }
+    )
+    if (!is.null(out)) return(out)
+    if (i < attempts) {
+      log_msg("WARN", sprintf("JSON se nepodarilo nacist, pokus %d/%d: %s", i, attempts, url))
+      Sys.sleep(sleep_seconds)
+    }
+  }
+  stop(conditionMessage(last_error))
+}
 
 fetch_feed <- function(name, url) {
   log_msg("INFO", paste("Loading", name))
@@ -339,7 +385,7 @@ is_climate_subject <- function(subjects) {
   str_detect(txt, "climat|environment|ecolog|sustainab|atmospher|pollution|biodivers|carbon|energy|hydrolog|water")
 }
 
-fetch_crossref_term <- function(term, date_from, date_to) {
+fetch_crossref_term <- function(term, date_from, date_to, keyword_label = term) {
   log_msg("INFO", sprintf("Crossref query: %s", term))
 
   tryCatch({
@@ -365,6 +411,7 @@ fetch_crossref_term <- function(term, date_from, date_to) {
     }
 
     out <- tibble(
+      keyword = keyword_label,
       title = if ("title" %in% names(items)) purrr::map_chr(items$title, ~ if (length(.x) > 0) as.character(.x[[1]]) else "") else rep("", n_items),
       summary_raw = if ("abstract" %in% names(items)) strip_html(as.character(items$abstract)) else rep("", n_items),
       date = vapply(seq_len(n_items), function(i) as.character(pick_date(as.list(items[i, , drop = FALSE]))), character(1)),
@@ -389,7 +436,7 @@ fetch_crossref_term <- function(term, date_from, date_to) {
         link_norm = normalize_link(link)
       ) %>%
       filter(climate_ok, !is.na(date), date >= date_from, date <= date_to, !is.na(link), nzchar(link)) %>%
-      select(source, title, link, summary_raw, date, link_norm)
+      select(keyword, source, title, link, summary_raw, date, link_norm)
 
     if (nrow(out) == 0) return(empty_items_tbl())
     out
@@ -450,14 +497,48 @@ fetch_science_api_results <- function(date_from, date_to) {
   all_terms <- unique(science_search_terms)
   out <- purrr::map_dfr(all_terms, function(term) {
     Sys.sleep(0.2)
-    bind_rows(
-      fetch_crossref_term(term, date_from, date_to),
-      fetch_arxiv_term(term, date_from, date_to)
-    )
+    fetch_arxiv_term(term, date_from, date_to)
   })
 
   if (nrow(out) == 0) return(empty_items_tbl())
   out %>% distinct(link_norm, title, source, .keep_all = TRUE)
+}
+
+fetch_crossref_results <- function(keywords_df, date_from, date_to) {
+  crossref_terms <- keywords_df %>%
+    transmute(keyword = keyword_group, term = keyword_term) %>%
+    bind_rows(tibble(keyword = science_search_terms, term = science_search_terms)) %>%
+    mutate(
+      keyword = str_squish(as.character(keyword)),
+      term = str_squish(as.character(term))
+    ) %>%
+    filter(nzchar(keyword), nzchar(term)) %>%
+    distinct(keyword, term)
+
+  if (nrow(crossref_terms) == 0) return(empty_crossref_tbl())
+
+  out <- purrr::pmap_dfr(crossref_terms, function(keyword, term) {
+    Sys.sleep(0.2)
+    fetch_crossref_term(term, date_from, date_to, keyword_label = keyword)
+  })
+
+  if (nrow(out) == 0) return(empty_crossref_tbl())
+
+  out %>%
+    mutate(
+      abstract = build_abstract(summary_raw, link),
+      keyword = as.character(keyword)
+    ) %>%
+    arrange(desc(date), keyword, source) %>%
+    distinct(link_norm, keyword, .keep_all = TRUE) %>%
+    transmute(
+      date = as.Date(date),
+      keyword = keyword,
+      source = source,
+      link = link,
+      abstract = abstract,
+      link_norm = link_norm
+    )
 }
 
 extract_article_text <- function(link) {
@@ -560,7 +641,10 @@ all_science_rss <- purrr::map2_dfr(science_rss_feeds$source, science_rss_feeds$u
 log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych RSS", nrow(all_science_rss)))
 
 all_science_api <- fetch_science_api_results(date_from, date_to)
-log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych API", nrow(all_science_api)))
+log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych API mimo Crossref", nrow(all_science_api)))
+
+crossref_direct_results <- fetch_crossref_results(keywords, date_from, date_to)
+log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z Crossref pro source-crossref.csv", nrow(crossref_direct_results)))
 
 all_items <- bind_rows(all_news, all_science_rss, all_science_api) %>% mutate(date = as.Date(date))
 
@@ -572,9 +656,9 @@ if (nrow(all_items) == 0) {
     select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
 
-  existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
+  final_crossref_results <- merge_results(crossref_direct_results, default_crossref_output_file) %>%
     select(date, keyword, source, link, abstract)
-  readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
+  readr::write_excel_csv(final_crossref_results, default_crossref_output_file)
 
   quit(save = "no")
 }
@@ -590,9 +674,9 @@ if (nrow(filtered_items) == 0) {
     select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
 
-  existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
+  final_crossref_results <- merge_results(crossref_direct_results, default_crossref_output_file) %>%
     select(date, keyword, source, link, abstract)
-  readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
+  readr::write_excel_csv(final_crossref_results, default_crossref_output_file)
 
   quit(save = "no")
 }
@@ -610,8 +694,7 @@ if (nrow(results) > 0) {
   results <- tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character())
 }
 
-crossref_results <- results %>%
-  filter(str_detect(source, "^Crossref"))
+crossref_results <- crossref_direct_results
 
 non_crossref_results <- results %>%
   filter(!str_detect(source, "^Crossref"))
