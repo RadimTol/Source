@@ -73,17 +73,6 @@ empty_items_tbl <- function() {
   )
 }
 
-empty_crossref_tbl <- function() {
-  tibble(
-    date = as.Date(character()),
-    keyword = character(),
-    source = character(),
-    link = character(),
-    abstract = character(),
-    link_norm = character()
-  )
-}
-
 log_msg <- function(level, text) {
   line <- sprintf("[%s] [%s] %s", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), level, text)
   cat(line, "\n")
@@ -263,43 +252,8 @@ extract_item_text <- function(node, xpath_candidates) {
   ""
 }
 
-safe_read_xml_url <- function(url, attempts = 4, sleep_seconds = 10) {
-  last_error <- NULL
-  for (i in seq_len(attempts)) {
-    out <- tryCatch(
-      xml2::read_xml(url),
-      error = function(e) {
-        last_error <<- e
-        NULL
-      }
-    )
-    if (!is.null(out)) return(out)
-    if (i < attempts) {
-      log_msg("WARN", sprintf("XML se nepodarilo nacist, pokus %d/%d: %s", i, attempts, url))
-      Sys.sleep(sleep_seconds)
-    }
-  }
-  stop(conditionMessage(last_error))
-}
-
-safe_read_json_url <- function(url, attempts = 4, sleep_seconds = 10) {
-  last_error <- NULL
-  for (i in seq_len(attempts)) {
-    out <- tryCatch(
-      jsonlite::fromJSON(url, flatten = TRUE),
-      error = function(e) {
-        last_error <<- e
-        NULL
-      }
-    )
-    if (!is.null(out)) return(out)
-    if (i < attempts) {
-      log_msg("WARN", sprintf("JSON se nepodarilo nacist, pokus %d/%d: %s", i, attempts, url))
-      Sys.sleep(sleep_seconds)
-    }
-  }
-  stop(conditionMessage(last_error))
-}
+safe_read_xml_url <- function(url) xml2::read_xml(url)
+safe_read_json_url <- function(url) jsonlite::fromJSON(url, flatten = TRUE)
 
 fetch_feed <- function(name, url) {
   log_msg("INFO", paste("Loading", name))
@@ -385,64 +339,104 @@ is_climate_subject <- function(subjects) {
   str_detect(txt, "climat|environment|ecolog|sustainab|atmospher|pollution|biodivers|carbon|energy|hydrolog|water")
 }
 
-fetch_crossref_term <- function(term, date_from, date_to, keyword_label = term) {
+fetch_crossref_term <- function(term, date_from, date_to) {
   log_msg("INFO", sprintf("Crossref query: %s", term))
 
   tryCatch({
     x <- safe_read_json_url(build_crossref_url(term, date_from, date_to))
     items <- x$message$items
-    if (is.null(items) || length(items) == 0) return(empty_items_tbl())
+    if (is.null(items) || length(items) == 0) {
+      log_msg("INFO", sprintf("Crossref query '%s': 0 polozek v odpovedi", term))
+      return(empty_items_tbl() %>% mutate(keyword = character()))
+    }
+
     items <- tibble::as_tibble(items)
     n_items <- nrow(items)
-    if (is.null(n_items) || n_items == 0) return(empty_items_tbl())
+    if (is.null(n_items) || n_items == 0) {
+      log_msg("INFO", sprintf("Crossref query '%s': 0 polozek po prevodu na tibble", term))
+      return(empty_items_tbl() %>% mutate(keyword = character()))
+    }
+
+    first_list_value <- function(x) {
+      if (is.null(x) || length(x) == 0) return("")
+      if (is.list(x)) x <- x[[1]]
+      if (is.null(x) || length(x) == 0 || all(is.na(x))) return("")
+      as.character(x[[1]])
+    }
+
+    get_list_col <- function(df, possible_names, default = "") {
+      col <- intersect(possible_names, names(df))
+      if (length(col) == 0) return(rep(default, nrow(df)))
+      purrr::map_chr(df[[col[[1]]]], first_list_value)
+    }
+
+    get_char_col <- function(df, possible_names, default = NA_character_) {
+      col <- intersect(possible_names, names(df))
+      if (length(col) == 0) return(rep(default, nrow(df)))
+      as.character(df[[col[[1]]]])
+    }
 
     pick_date <- function(row) {
-      for (col in c("published.print.date-parts", "published.online.date-parts", "created.date-parts")) {
+      date_cols <- c(
+        "published-print.date-parts",
+        "published-online.date-parts",
+        "published.date-parts",
+        "published.print.date-parts",
+        "published.online.date-parts",
+        "created.date-parts"
+      )
+
+      for (col in date_cols) {
         if (!col %in% names(row)) next
-        val <- row[[col]][[1]]
-        if (length(val) >= 1) {
-          year <- as.integer(val[1])
-          month <- ifelse(length(val) >= 2, as.integer(val[2]), 1L)
-          day <- ifelse(length(val) >= 3, as.integer(val[3]), 1L)
-          return(as.Date(sprintf("%04d-%02d-%02d", year, month, day)))
+        val <- row[[col]]
+        if (is.list(val)) val <- val[[1]]
+        if (is.list(val) && length(val) > 0) val <- val[[1]]
+        val <- unlist(val)
+        if (length(val) >= 1 && !is.na(val[1])) {
+          year <- suppressWarnings(as.integer(val[1]))
+          month <- ifelse(length(val) >= 2 && !is.na(val[2]), suppressWarnings(as.integer(val[2])), 1L)
+          day <- ifelse(length(val) >= 3 && !is.na(val[3]), suppressWarnings(as.integer(val[3])), 1L)
+          if (!is.na(year)) return(as.Date(sprintf("%04d-%02d-%02d", year, month, day)))
         }
       }
       as.Date(NA)
     }
 
+    title_vec <- get_list_col(items, c("title"), default = "")
+    container_vec <- get_list_col(items, c("container-title", "container.title"), default = "")
+    abstract_vec <- get_char_col(items, c("abstract"), default = "")
+    url_vec <- get_char_col(items, c("URL"), default = NA_character_)
+    doi_vec <- get_char_col(items, c("DOI"), default = NA_character_)
+
+    link_vec <- dplyr::coalesce(
+      url_vec,
+      ifelse(!is.na(doi_vec) & nzchar(doi_vec), paste0("https://doi.org/", doi_vec), NA_character_)
+    )
+
     out <- tibble(
-      keyword = keyword_label,
-      title = if ("title" %in% names(items)) purrr::map_chr(items$title, ~ if (length(.x) > 0) as.character(.x[[1]]) else "") else rep("", n_items),
-      summary_raw = if ("abstract" %in% names(items)) strip_html(as.character(items$abstract)) else rep("", n_items),
+      source = ifelse(nzchar(str_squish(strip_html(container_vec))), paste0("Crossref/", str_squish(strip_html(container_vec))), "Crossref"),
+      title = title_vec,
+      link = link_vec,
+      summary_raw = strip_html(abstract_vec),
       date = vapply(seq_len(n_items), function(i) as.character(pick_date(as.list(items[i, , drop = FALSE]))), character(1)),
-      source = {
-        container_col <- intersect(c("container.title", "container-title"), names(items))
-        if (length(container_col) > 0) {
-          ct <- purrr::map_chr(items[[container_col[[1]]]], ~ {
-            if (length(.x) > 0) as.character(.x[[1]]) else ""
-          })
-          ct <- str_squish(strip_html(ct))
-          ifelse(nzchar(ct), paste0("Crossref/", ct), "Crossref")
-        } else {
-          rep("Crossref", n_items)
-        }
-      },
-      link = dplyr::coalesce(if ("URL" %in% names(items)) as.character(items$URL) else rep(NA_character_, n_items), if ("DOI" %in% names(items)) ifelse(!is.na(items$DOI) & nzchar(items$DOI), paste0("https://doi.org/", items$DOI), NA_character_) else rep(NA_character_, n_items)),
-      climate_ok = if ("subject" %in% names(items)) purrr::map_lgl(items$subject, is_climate_subject) else rep(TRUE, n_items)
+      link_norm = normalize_link(link_vec),
+      keyword = term
     ) %>%
       mutate(
         title = str_squish(strip_html(title)),
-        date = as.Date(date),
-        link_norm = normalize_link(link)
+        summary_raw = str_squish(strip_html(summary_raw)),
+        date = as.Date(date)
       ) %>%
-      filter(climate_ok, !is.na(date), date >= date_from, date <= date_to, !is.na(link), nzchar(link)) %>%
-      select(keyword, source, title, link, summary_raw, date, link_norm)
+      filter(!is.na(date), date >= date_from, date <= date_to, !is.na(link), nzchar(link)) %>%
+      select(source, title, link, summary_raw, date, link_norm, keyword)
 
-    if (nrow(out) == 0) return(empty_items_tbl())
+    log_msg("INFO", sprintf("Crossref query '%s': %d polozek v odpovedi, %d polozek po filtraci na datum/link", term, n_items, nrow(out)))
+
+    if (nrow(out) == 0) return(empty_items_tbl() %>% mutate(keyword = character()))
     out
   }, error = function(e) {
     log_msg("WARN", paste("Crossref failed for", term, "-", e$message))
-    empty_items_tbl()
+    empty_items_tbl() %>% mutate(keyword = character())
   })
 }
 
@@ -497,48 +491,14 @@ fetch_science_api_results <- function(date_from, date_to) {
   all_terms <- unique(science_search_terms)
   out <- purrr::map_dfr(all_terms, function(term) {
     Sys.sleep(0.2)
-    fetch_arxiv_term(term, date_from, date_to)
-  })
-
-  if (nrow(out) == 0) return(empty_items_tbl())
-  out %>% distinct(link_norm, title, source, .keep_all = TRUE)
-}
-
-fetch_crossref_results <- function(keywords_df, date_from, date_to) {
-  crossref_terms <- keywords_df %>%
-    transmute(keyword = keyword_group, term = keyword_term) %>%
-    bind_rows(tibble(keyword = science_search_terms, term = science_search_terms)) %>%
-    mutate(
-      keyword = str_squish(as.character(keyword)),
-      term = str_squish(as.character(term))
-    ) %>%
-    filter(nzchar(keyword), nzchar(term)) %>%
-    distinct(keyword, term)
-
-  if (nrow(crossref_terms) == 0) return(empty_crossref_tbl())
-
-  out <- purrr::pmap_dfr(crossref_terms, function(keyword, term) {
-    Sys.sleep(0.2)
-    fetch_crossref_term(term, date_from, date_to, keyword_label = keyword)
-  })
-
-  if (nrow(out) == 0) return(empty_crossref_tbl())
-
-  out %>%
-    mutate(
-      abstract = build_abstract(summary_raw, link),
-      keyword = as.character(keyword)
-    ) %>%
-    arrange(desc(date), keyword, source) %>%
-    distinct(link_norm, keyword, .keep_all = TRUE) %>%
-    transmute(
-      date = as.Date(date),
-      keyword = keyword,
-      source = source,
-      link = link,
-      abstract = abstract,
-      link_norm = link_norm
+    bind_rows(
+      fetch_crossref_term(term, date_from, date_to),
+      fetch_arxiv_term(term, date_from, date_to) %>% mutate(keyword = NA_character_)
     )
+  })
+
+  if (nrow(out) == 0) return(empty_items_tbl() %>% mutate(keyword = character()))
+  out %>% distinct(link_norm, title, source, .keep_all = TRUE)
 }
 
 extract_article_text <- function(link) {
@@ -641,10 +601,7 @@ all_science_rss <- purrr::map2_dfr(science_rss_feeds$source, science_rss_feeds$u
 log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych RSS", nrow(all_science_rss)))
 
 all_science_api <- fetch_science_api_results(date_from, date_to)
-log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych API mimo Crossref", nrow(all_science_api)))
-
-crossref_direct_results <- fetch_crossref_results(keywords, date_from, date_to)
-log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z Crossref pro source-crossref.csv", nrow(crossref_direct_results)))
+log_msg("INFO", sprintf("Nacteno celkem %d zaznamu z vedeckych API", nrow(all_science_api)))
 
 all_items <- bind_rows(all_news, all_science_rss, all_science_api) %>% mutate(date = as.Date(date))
 
@@ -656,9 +613,9 @@ if (nrow(all_items) == 0) {
     select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
 
-  final_crossref_results <- merge_results(crossref_direct_results, default_crossref_output_file) %>%
+  existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
     select(date, keyword, source, link, abstract)
-  readr::write_excel_csv(final_crossref_results, default_crossref_output_file)
+  readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
 
   quit(save = "no")
 }
@@ -674,15 +631,21 @@ if (nrow(filtered_items) == 0) {
     select(date, keyword, source, link, abstract)
   readr::write_excel_csv(existing_results, default_output_file)
 
-  final_crossref_results <- merge_results(crossref_direct_results, default_crossref_output_file) %>%
+  existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
     select(date, keyword, source, link, abstract)
-  readr::write_excel_csv(final_crossref_results, default_crossref_output_file)
+  readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
 
   quit(save = "no")
 }
 
-results <- match_keywords(filtered_items, keywords)
-log_msg("INFO", sprintf("Po matchi na klicova slova: %d zaznamu", nrow(results)))
+# Zpravodajske a RSS vystupy se dal filtruji pres keywords.txt.
+# Crossref se uklada zvlast podle terminu, kterym byl v Crossref nalezen.
+items_for_keyword_match <- filtered_items %>%
+  filter(!str_detect(source, "^Crossref")) %>%
+  select(source, title, link, summary_raw, date, link_norm)
+
+results <- match_keywords(items_for_keyword_match, keywords)
+log_msg("INFO", sprintf("Po matchi na klicova slova mimo Crossref: %d zaznamu", nrow(results)))
 
 if (nrow(results) > 0) {
   results <- results %>%
@@ -694,12 +657,20 @@ if (nrow(results) > 0) {
   results <- tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character())
 }
 
-crossref_results <- crossref_direct_results
+crossref_results <- filtered_items %>%
+  filter(str_detect(source, "^Crossref")) %>%
+  mutate(
+    keyword = if ("keyword" %in% names(.)) as.character(keyword) else NA_character_,
+    keyword = ifelse(is.na(keyword) | !nzchar(keyword), "Crossref", keyword),
+    abstract = first_sentences(summary_raw, max_sentences = 3, max_chars = 550)
+  ) %>%
+  arrange(desc(date), keyword, source) %>%
+  distinct(link_norm, keyword, .keep_all = TRUE) %>%
+  transmute(date = as.Date(date), keyword = keyword, source = source, link = link, abstract = abstract, link_norm = link_norm)
 
-non_crossref_results <- results %>%
-  filter(!str_detect(source, "^Crossref"))
+log_msg("INFO", sprintf("Crossref zaznamu pro samostatny vystup: %d", nrow(crossref_results)))
 
-final_results <- merge_results(non_crossref_results, default_output_file) %>%
+final_results <- merge_results(results, default_output_file) %>%
   filter(!str_detect(source, "^Crossref")) %>%
   select(date, keyword, source, link, abstract)
 
