@@ -55,7 +55,6 @@ science_search_terms <- c(
   "drought",
   "flood",
   "heatwave",
-  "air pollution"
 )
 
 log_file <- default_log_file
@@ -334,7 +333,7 @@ build_crossref_url <- function(term, date_from, date_to, rows = 100) {
 is_climate_subject <- function(subjects) {
   if (is.null(subjects) || length(subjects) == 0) return(FALSE)
   txt <- str_to_lower(paste(unlist(subjects), collapse = " "))
-  str_detect(txt, "climat|sustainab|atmospher|pollution|carbon|energy|hydrolog|water")
+  str_detect(txt, "climat|sustainab|atmospher|carbon|energy|hydrolog|water")
 }
 
 fetch_crossref_term <- function(term, date_from, date_to) {
