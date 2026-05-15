@@ -54,7 +54,7 @@ science_search_terms <- c(
   "greenhouse gas emissions",
   "drought",
   "flood",
-  "heatwave",
+  "heatwave"
 )
 
 log_file <- default_log_file
