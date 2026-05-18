@@ -51,7 +51,6 @@ science_search_terms <- c(
   "climate change",
   "global warming",
   "climate extremes",
-  "greenhouse gas emissions",
   "drought",
   "flood",
   "heatwave"
