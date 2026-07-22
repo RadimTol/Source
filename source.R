@@ -653,6 +653,14 @@ if (nrow(results) > 0) {
   results <- tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character())
 }
 
+# Klíčová slova, která nechceme zapisovat do source-crossref.csv
+excluded_crossref_keywords <- c(
+  "klimatická změna",
+  "climate change",
+  "klimatické změny",
+  "climate changes"
+)
+
 crossref_results <- filtered_items %>%
   filter(str_detect(source, "^Crossref")) %>%
   mutate(
@@ -660,9 +668,17 @@ crossref_results <- filtered_items %>%
     keyword = ifelse(is.na(keyword) | !nzchar(keyword), "Crossref", keyword),
     abstract = first_sentences(summary_raw, max_sentences = 3, max_chars = 550)
   ) %>%
+  filter(!str_to_lower(keyword) %in% str_to_lower(excluded_crossref_keywords)) %>%
   arrange(desc(date), keyword, source) %>%
   distinct(link_norm, keyword, .keep_all = TRUE) %>%
-  transmute(date = as.Date(date), keyword = keyword, source = source, link = link, abstract = abstract, link_norm = link_norm)
+  transmute(
+    date = as.Date(date),
+    keyword = keyword,
+    source = source,
+    link = link,
+    abstract = abstract,
+    link_norm = link_norm
+  )
 
 log_msg("INFO", sprintf("Crossref zaznamu pro samostatny vystup: %d", nrow(crossref_results)))
 
