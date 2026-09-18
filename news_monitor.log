@@ -1,57 +1,57 @@
-[2026-09-17 18:15:35] [INFO] Interval: 2026-09-16 -> 2026-09-17 
-[2026-09-17 18:15:35] [INFO] Pro Crossref bude pouzit kontakt radim.tolasz@chmi.cz 
-[2026-09-17 18:15:35] [INFO] Nacteno 29 klicovych termu v 5 skupinach z keywords.txt 
-[2026-09-17 18:15:35] [INFO] Loading CT24 
-[2026-09-17 18:15:36] [INFO] Loading iDNES 
-[2026-09-17 18:15:37] [INFO] Loading Novinky 
-[2026-09-17 18:15:38] [INFO] Loading Seznam Zpravy 
-[2026-09-17 18:15:39] [INFO] Loading Denik N 
-[2026-09-17 18:15:40] [INFO] Loading Reflex 
-[2026-09-17 18:15:40] [INFO] Loading Respekt 
-[2026-09-17 18:15:41] [WARN] Skipping Respekt - no items found 
-[2026-09-17 18:15:41] [INFO] Loading BBC World 
-[2026-09-17 18:15:41] [INFO] Loading The Guardian World 
-[2026-09-17 18:15:41] [INFO] Loading NYTimes World 
-[2026-09-17 18:15:41] [INFO] Loading NPR World 
-[2026-09-17 18:15:41] [INFO] Loading Al Jazeera 
-[2026-09-17 18:15:41] [INFO] Loading Sky News World 
-[2026-09-17 18:15:42] [INFO] Nacteno celkem 382 zaznamu ze zpravodajskych RSS 
-[2026-09-17 18:15:42] [INFO] Loading Nature Climate 
-[2026-09-17 18:15:42] [INFO] Loading Nature Sustainability 
-[2026-09-17 18:15:42] [INFO] Loading PNAS 
-[2026-09-17 18:15:42] [INFO] Loading ScienceDaily Climate 
-[2026-09-17 18:15:42] [INFO] Loading ScienceDaily Global Warming 
-[2026-09-17 18:15:43] [INFO] Loading ScienceDaily Environmental Issues 
-[2026-09-17 18:15:43] [INFO] Nacteno celkem 293 zaznamu z vedeckych RSS 
-[2026-09-17 18:15:43] [INFO] Crossref query: climate change 
-[2026-09-17 18:15:44] [INFO] Crossref query 'climate change': 100 polozek v odpovedi, 89 polozek po filtraci na datum/link 
-[2026-09-17 18:15:44] [INFO] arXiv query: climate change 
-[2026-09-17 18:15:45] [INFO] Crossref query: global warming 
-[2026-09-17 18:15:46] [INFO] Crossref query 'global warming': 100 polozek v odpovedi, 91 polozek po filtraci na datum/link 
-[2026-09-17 18:15:46] [INFO] arXiv query: global warming 
-[2026-09-17 18:15:46] [INFO] Crossref query: climate extremes 
-[2026-09-17 18:15:47] [INFO] Crossref query 'climate extremes': 100 polozek v odpovedi, 90 polozek po filtraci na datum/link 
-[2026-09-17 18:15:47] [INFO] arXiv query: climate extremes 
-[2026-09-17 18:16:00] [INFO] Crossref query: drought 
-[2026-09-17 18:16:02] [INFO] Crossref query 'drought': 33 polozek v odpovedi, 27 polozek po filtraci na datum/link 
-[2026-09-17 18:16:02] [INFO] arXiv query: drought 
-[2026-09-17 18:16:02] [INFO] Crossref query: flood 
-[2026-09-17 18:16:04] [INFO] Crossref query 'flood': 25 polozek v odpovedi, 19 polozek po filtraci na datum/link 
-[2026-09-17 18:16:04] [INFO] arXiv query: flood 
-[2026-09-17 18:16:07] [INFO] Crossref query: heatwave 
-[2026-09-17 18:16:07] [INFO] Crossref query 'heatwave': 3 polozek v odpovedi, 2 polozek po filtraci na datum/link 
-[2026-09-17 18:16:07] [INFO] arXiv query: heatwave 
-[2026-09-17 18:16:10] [INFO] Nacteno celkem 381 zaznamu z vedeckych API 
-[2026-09-17 18:16:10] [INFO] Po filtraci na interval zustalo 723 zaznamu 
-[2026-09-17 18:16:10] [INFO] Po matchi na klicova slova mimo Crossref: 7 zaznamu 
-[2026-09-17 18:16:10] [INFO] Crossref zaznamu pro samostatny vystup: 165 
-[2026-09-17 18:16:10] [INFO] Existujici vystup obsahuje 34 zaznamu 
-[2026-09-17 18:16:10] [INFO] Novy beh vytvoril 7 zaznamu 
-[2026-09-17 18:16:10] [INFO] Po slouceni a deduplikaci je ve vystupu 37 zaznamu 
-[2026-09-17 18:16:10] [INFO] Pribylo 3 novych zaznamu 
-[2026-09-17 18:16:10] [INFO] Hotovo. Ulozeno 37 zaznamu do source.csv 
-[2026-09-17 18:16:10] [INFO] Existujici vystup obsahuje 425 zaznamu 
-[2026-09-17 18:16:10] [INFO] Novy beh vytvoril 165 zaznamu 
-[2026-09-17 18:16:10] [INFO] Po slouceni a deduplikaci je ve vystupu 499 zaznamu 
-[2026-09-17 18:16:10] [INFO] Pribylo 74 novych zaznamu 
-[2026-09-17 18:16:10] [INFO] Hotovo. Ulozeno 499 zaznamu do source-crossref.csv 
+[2026-09-18 05:58:06] [INFO] Interval: 2026-09-17 -> 2026-09-18 
+[2026-09-18 05:58:06] [INFO] Pro Crossref bude pouzit kontakt radim.tolasz@chmi.cz 
+[2026-09-18 05:58:06] [INFO] Nacteno 29 klicovych termu v 5 skupinach z keywords.txt 
+[2026-09-18 05:58:06] [INFO] Loading CT24 
+[2026-09-18 05:58:08] [INFO] Loading iDNES 
+[2026-09-18 05:58:09] [INFO] Loading Novinky 
+[2026-09-18 05:58:10] [INFO] Loading Seznam Zpravy 
+[2026-09-18 05:58:11] [INFO] Loading Denik N 
+[2026-09-18 05:58:12] [INFO] Loading Reflex 
+[2026-09-18 05:58:13] [INFO] Loading Respekt 
+[2026-09-18 05:58:14] [WARN] Skipping Respekt - no items found 
+[2026-09-18 05:58:14] [INFO] Loading BBC World 
+[2026-09-18 05:58:14] [INFO] Loading The Guardian World 
+[2026-09-18 05:58:14] [INFO] Loading NYTimes World 
+[2026-09-18 05:58:15] [INFO] Loading NPR World 
+[2026-09-18 05:58:15] [INFO] Loading Al Jazeera 
+[2026-09-18 05:58:15] [INFO] Loading Sky News World 
+[2026-09-18 05:58:15] [INFO] Nacteno celkem 383 zaznamu ze zpravodajskych RSS 
+[2026-09-18 05:58:15] [INFO] Loading Nature Climate 
+[2026-09-18 05:58:17] [INFO] Loading Nature Sustainability 
+[2026-09-18 05:58:17] [INFO] Loading PNAS 
+[2026-09-18 05:58:17] [INFO] Loading ScienceDaily Climate 
+[2026-09-18 05:58:18] [INFO] Loading ScienceDaily Global Warming 
+[2026-09-18 05:58:18] [INFO] Loading ScienceDaily Environmental Issues 
+[2026-09-18 05:58:18] [INFO] Nacteno celkem 293 zaznamu z vedeckych RSS 
+[2026-09-18 05:58:18] [INFO] Crossref query: climate change 
+[2026-09-18 05:58:20] [INFO] Crossref query 'climate change': 100 polozek v odpovedi, 90 polozek po filtraci na datum/link 
+[2026-09-18 05:58:20] [INFO] arXiv query: climate change 
+[2026-09-18 05:58:21] [INFO] Crossref query: global warming 
+[2026-09-18 05:58:23] [INFO] Crossref query 'global warming': 100 polozek v odpovedi, 97 polozek po filtraci na datum/link 
+[2026-09-18 05:58:23] [INFO] arXiv query: global warming 
+[2026-09-18 05:58:23] [INFO] Crossref query: climate extremes 
+[2026-09-18 05:58:25] [INFO] Crossref query 'climate extremes': 81 polozek v odpovedi, 73 polozek po filtraci na datum/link 
+[2026-09-18 05:58:25] [INFO] arXiv query: climate extremes 
+[2026-09-18 05:58:41] [INFO] Crossref query: drought 
+[2026-09-18 05:58:43] [INFO] Crossref query 'drought': 23 polozek v odpovedi, 18 polozek po filtraci na datum/link 
+[2026-09-18 05:58:43] [INFO] arXiv query: drought 
+[2026-09-18 05:58:44] [INFO] Crossref query: flood 
+[2026-09-18 05:58:45] [INFO] Crossref query 'flood': 15 polozek v odpovedi, 11 polozek po filtraci na datum/link 
+[2026-09-18 05:58:45] [INFO] arXiv query: flood 
+[2026-09-18 05:58:46] [INFO] Crossref query: heatwave 
+[2026-09-18 05:58:46] [INFO] Crossref query 'heatwave': 1 polozek v odpovedi, 1 polozek po filtraci na datum/link 
+[2026-09-18 05:58:46] [INFO] arXiv query: heatwave 
+[2026-09-18 05:58:47] [INFO] Nacteno celkem 342 zaznamu z vedeckych API 
+[2026-09-18 05:58:47] [INFO] Po filtraci na interval zustalo 613 zaznamu 
+[2026-09-18 05:58:47] [INFO] Po matchi na klicova slova mimo Crossref: 9 zaznamu 
+[2026-09-18 05:58:47] [INFO] Crossref zaznamu pro samostatny vystup: 125 
+[2026-09-18 05:58:47] [INFO] Existujici vystup obsahuje 37 zaznamu 
+[2026-09-18 05:58:47] [INFO] Novy beh vytvoril 9 zaznamu 
+[2026-09-18 05:58:47] [INFO] Po slouceni a deduplikaci je ve vystupu 45 zaznamu 
+[2026-09-18 05:58:47] [INFO] Pribylo 8 novych zaznamu 
+[2026-09-18 05:58:47] [INFO] Hotovo. Ulozeno 45 zaznamu do source.csv 
+[2026-09-18 05:58:47] [INFO] Existujici vystup obsahuje 499 zaznamu 
+[2026-09-18 05:58:47] [INFO] Novy beh vytvoril 125 zaznamu 
+[2026-09-18 05:58:47] [INFO] Po slouceni a deduplikaci je ve vystupu 558 zaznamu 
+[2026-09-18 05:58:47] [INFO] Pribylo 59 novych zaznamu 
+[2026-09-18 05:58:47] [INFO] Hotovo. Ulozeno 558 zaznamu do source-crossref.csv 
