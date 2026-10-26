@@ -610,28 +610,26 @@ read_existing_results <- function(path) {
 translate_batch_local <- function(texts) {
   if (!length(texts)) return(character())
   if (!file.exists(translation_helper)) {
-    log_msg("WARN", paste("Chybi lokalni prekladac:", translation_helper))
-    return(rep("", length(texts)))
+    stop(paste("Chybi lokalni prekladac:", translation_helper))
   }
   input_file <- tempfile(fileext = ".json")
   output_file <- tempfile(fileext = ".json")
   on.exit(unlink(c(input_file, output_file)), add = TRUE)
-  jsonlite::write_json(as.list(texts), input_file, auto_unbox = FALSE)
+  jsonlite::write_json(as.list(unname(as.character(texts))), input_file, auto_unbox = TRUE)
   args <- c(translation_helper, input_file, output_file)
   tryCatch({
     output <- suppressWarnings(system2(translation_python, args = shQuote(args), stdout = TRUE, stderr = TRUE))
     status <- attr(output, "status")
     if (!is.null(status) && status != 0L) {
-      log_msg("WARN", paste("Lokalni preklad selhal:", paste(tail(output, 5), collapse = " | ")))
-      return(rep("", length(texts)))
+      stop(paste("Lokalni preklad selhal:", paste(tail(output, 12), collapse = " | ")))
     }
     if (!file.exists(output_file)) stop("Prekladac nevytvoril vysledny soubor")
     answer <- unlist(jsonlite::fromJSON(output_file), use.names = FALSE)
     if (length(answer) != length(texts)) stop("Nespravny pocet prekladu")
+    if (any(!nzchar(trimws(as.character(answer))))) stop("Prekladac vratil prazdny preklad")
     as.character(answer)
   }, error = function(e) {
-    log_msg("WARN", paste("Lokalni preklad neni dostupny:", e$message))
-    rep("", length(texts))
+    stop(paste("Lokalni preklad neni dostupny:", e$message))
   })
 }
 
