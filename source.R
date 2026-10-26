@@ -19,6 +19,13 @@ default_output_file          <- "source.csv"
 default_crossref_output_file <- "source-crossref.csv"
 default_log_file             <- "news_monitor.log"
 api_contact_email            <- Sys.getenv("SCHOLARLY_API_EMAIL", unset = "")
+# Preklad probiha na vlastnim pocitaci po jednorazovem stazeni jazykoveho modelu.
+# Local Python translator: no API key and no subscription required.
+# Set LOCAL_TRANSLATION_PYTHON if 'python' is not on PATH.
+translation_python <- Sys.getenv("LOCAL_TRANSLATION_PYTHON", unset = "python")
+script_file_arg <- grep("^--file=", commandArgs(FALSE), value = TRUE)
+script_dir <- if (length(script_file_arg)) dirname(normalizePath(sub("^--file=", "", script_file_arg[[1]]))) else getwd()
+translation_helper <- file.path(script_dir, "translate_local.py")
 
 rss_feeds <- tribble(
   ~source,              ~url,
@@ -547,26 +554,126 @@ match_keywords <- function(news_df, keywords_df) {
     distinct(link_norm, keyword, .keep_all = TRUE)
 }
 
+empty_result_tbl <- function() {
+  tibble(date = as.Date(character()), keyword = character(), source = character(),
+         link = character(), abstract = character(), abstract_cs = character(), link_norm = character())
+}
+
+# Jeden vystupni sloupec: puvodni abstrakt a pod nim cesky preklad.
+translation_marker <- "\n\nČESKÝ PŘEKLAD:\n"
+
+split_abstract <- function(x) {
+  x <- if (is.na(x)) "" else as.character(x)
+  # Zabranuje opakovanemu pridavani prekladu pri dalsim spusteni.
+  pos <- regexpr(translation_marker, x, fixed = TRUE)[1]
+  if (pos < 0) return(list(original = x, translated = ""))
+  list(
+    original = substr(x, 1, pos - 1),
+    translated = substr(x, pos + nchar(translation_marker), nchar(x))
+  )
+}
+
+combine_abstract <- function(original, translated) {
+  original <- if (is.na(original)) "" else as.character(original)
+  translated <- if (is.na(translated)) "" else as.character(translated)
+  if (!nzchar(trimws(translated))) return(original)
+  paste0(original, translation_marker, translated)
+}
+
 read_existing_results <- function(path) {
-  if (!file.exists(path)) {
-    return(tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character()))
-  }
-
+  if (!file.exists(path)) return(empty_result_tbl())
   tryCatch({
-    df <- suppressMessages(readr::read_csv(path, show_col_types = FALSE))
+    df <- suppressMessages(readr::read_csv(path, show_col_types = FALSE,
+                                           col_types = readr::cols(.default = readr::col_character())))
     required_cols <- c("date", "keyword", "source", "link", "abstract")
-    missing_cols <- setdiff(required_cols, names(df))
-    if (length(missing_cols) > 0) {
+    if (length(setdiff(required_cols, names(df))) > 0) {
       log_msg("WARN", sprintf("Existujici %s nema ocekavane sloupce, bude ignorovan.", path))
-      return(tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character()))
+      return(empty_result_tbl())
     }
-
-    df %>% transmute(date = as.Date(date), keyword = as.character(keyword), source = as.character(source), link = as.character(link), abstract = as.character(abstract), link_norm = normalize_link(link))
+    if (!"abstract_cs" %in% names(df)) df$abstract_cs <- ""
+    parsed <- lapply(coalesce(as.character(df$abstract), ""), split_abstract)
+    df$abstract <- vapply(parsed, `[[`, character(1), "original")
+    embedded_cs <- vapply(parsed, `[[`, character(1), "translated")
+    df$abstract_cs <- ifelse(nzchar(coalesce(df$abstract_cs, "")), df$abstract_cs, embedded_cs)
+    df %>% transmute(
+      date = as.Date(date), keyword = as.character(keyword), source = as.character(source),
+      link = as.character(link), abstract = coalesce(as.character(abstract), ""),
+      abstract_cs = coalesce(as.character(abstract_cs), ""), link_norm = normalize_link(link)
+    )
   }, error = function(e) {
-    log_msg("WARN", sprintf("Existujici %s se nepodarilo nacist, bude ignorovan: %s", path, e$message))
-    tibble(date = as.Date(character()), keyword = character(), source = character(), link = character(), abstract = character(), link_norm = character())
+    log_msg("WARN", sprintf("Existujici %s se nepodarilo nacist: %s", path, e$message))
+    empty_result_tbl()
   })
 }
+
+# Translate a batch in one Python process so the model is loaded only once.
+translate_batch_local <- function(texts) {
+  if (!length(texts)) return(character())
+  if (!file.exists(translation_helper)) {
+    log_msg("WARN", paste("Chybi lokalni prekladac:", translation_helper))
+    return(rep("", length(texts)))
+  }
+  input_file <- tempfile(fileext = ".json")
+  output_file <- tempfile(fileext = ".json")
+  on.exit(unlink(c(input_file, output_file)), add = TRUE)
+  jsonlite::write_json(as.list(texts), input_file, auto_unbox = FALSE)
+  args <- c(translation_helper, input_file, output_file)
+  tryCatch({
+    output <- suppressWarnings(system2(translation_python, args = shQuote(args), stdout = TRUE, stderr = TRUE))
+    status <- attr(output, "status")
+    if (!is.null(status) && status != 0L) {
+      log_msg("WARN", paste("Lokalni preklad selhal:", paste(tail(output, 5), collapse = " | ")))
+      return(rep("", length(texts)))
+    }
+    if (!file.exists(output_file)) stop("Prekladac nevytvoril vysledny soubor")
+    answer <- unlist(jsonlite::fromJSON(output_file), use.names = FALSE)
+    if (length(answer) != length(texts)) stop("Nespravny pocet prekladu")
+    as.character(answer)
+  }, error = function(e) {
+    log_msg("WARN", paste("Lokalni preklad neni dostupny:", e$message))
+    rep("", length(texts))
+  })
+}
+
+fill_czech_abstracts <- function(df) {
+  if (nrow(df) == 0) return(df)
+  df$abstract <- coalesce(as.character(df$abstract), "")
+  df$abstract_cs <- coalesce(as.character(df$abstract_cs), "")
+  missing <- which(nzchar(trimws(df$abstract)) & !nzchar(trimws(df$abstract_cs)))
+  if (!length(missing)) return(df)
+  for (i in missing) {
+    original <- df$abstract[[i]]
+    if (exists(original, envir = translation_cache, inherits = FALSE)) {
+      df$abstract_cs[[i]] <- get(original, envir = translation_cache)
+    }
+  }
+  missing <- which(nzchar(trimws(df$abstract)) & !nzchar(trimws(df$abstract_cs)))
+  if (!length(missing)) return(df)
+  originals <- unique(df$abstract[missing])
+  log_msg("INFO", sprintf("Lokalni preklad: %d novych unikatnich abstraktu", length(originals)))
+  translations <- translate_batch_local(originals)
+  for (j in seq_along(originals)) {
+    if (nzchar(trimws(translations[[j]]))) assign(originals[[j]], translations[[j]], envir = translation_cache)
+  }
+  for (i in missing) {
+    original <- df$abstract[[i]]
+    if (exists(original, envir = translation_cache, inherits = FALSE)) {
+      df$abstract_cs[[i]] <- get(original, envir = translation_cache)
+    }
+  }
+  df
+}
+
+translation_cache <- new.env(parent = emptyenv(), hash = TRUE)
+for (path in c(default_output_file, default_crossref_output_file)) {
+  old <- read_existing_results(path)
+  for (i in seq_len(nrow(old))) {
+    if (nzchar(old$abstract[[i]]) && nzchar(old$abstract_cs[[i]])) {
+      assign(old$abstract[[i]], old$abstract_cs[[i]], envir = translation_cache)
+    }
+  }
+}
+log_msg("INFO", "Preklad: lokalni model EN->CS, bez API klice. Pri prvnim pouziti je potreba stahnout model.")
 
 merge_results <- function(new_results, output_path) {
   existing_results <- read_existing_results(output_path)
@@ -574,17 +681,27 @@ merge_results <- function(new_results, output_path) {
   log_msg("INFO", sprintf("Novy beh vytvoril %d zaznamu", nrow(new_results)))
 
   combined <- bind_rows(new_results, existing_results) %>%
-    mutate(date = as.Date(date), keyword = as.character(keyword), source = as.character(source), link = as.character(link), abstract = as.character(abstract), link_norm = normalize_link(link)) %>%
+    mutate(date = as.Date(date), keyword = as.character(keyword), source = as.character(source),
+           link = as.character(link), abstract = coalesce(as.character(abstract), ""),
+           abstract_cs = coalesce(as.character(abstract_cs), ""), link_norm = normalize_link(link)) %>%
     arrange(desc(date), source, keyword) %>%
-    distinct(link_norm, keyword, .keep_all = TRUE) %>%
+    group_by(link_norm, keyword) %>%
+    mutate(abstract_cs = if (any(nzchar(abstract_cs))) {
+      first(abstract_cs[nzchar(abstract_cs)])
+    } else "") %>%
+    slice_head(n = 1) %>% ungroup() %>%
     arrange(desc(date), source, keyword)
 
-  added_count <- nrow(combined) - nrow(existing_results)
-  if (added_count < 0) added_count <- 0
+  added_count <- max(0, nrow(combined) - nrow(existing_results))
+  log_msg("INFO", sprintf("Po slouceni je ve vystupu %d zaznamu, novych %d", nrow(combined), added_count))
+  fill_czech_abstracts(combined)
+}
 
-  log_msg("INFO", sprintf("Po slouceni a deduplikaci je ve vystupu %d zaznamu", nrow(combined)))
-  log_msg("INFO", sprintf("Pribylo %d novych zaznamu", added_count))
-  combined
+output_single_abstract <- function(df) {
+  if (nrow(df) > 0) {
+    df$abstract <- mapply(combine_abstract, df$abstract, df$abstract_cs, USE.NAMES = FALSE)
+  }
+  df %>% select(date, keyword, source, link, abstract)
 }
 
 keywords <- read_keywords(default_keywords_file)
@@ -606,11 +723,13 @@ if (nrow(all_items) == 0) {
 
   existing_results <- read_existing_results(default_output_file) %>%
     filter(!str_detect(source, "^Crossref")) %>%
-    select(date, keyword, source, link, abstract)
+    select(date, keyword, source, link, abstract, abstract_cs) %>%
+    output_single_abstract()
   readr::write_excel_csv(existing_results, default_output_file)
 
   existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
-    select(date, keyword, source, link, abstract)
+    select(date, keyword, source, link, abstract, abstract_cs) %>%
+    output_single_abstract()
   readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
 
   quit(save = "no")
@@ -624,11 +743,13 @@ if (nrow(filtered_items) == 0) {
 
   existing_results <- read_existing_results(default_output_file) %>%
     filter(!str_detect(source, "^Crossref")) %>%
-    select(date, keyword, source, link, abstract)
+    select(date, keyword, source, link, abstract, abstract_cs) %>%
+    output_single_abstract()
   readr::write_excel_csv(existing_results, default_output_file)
 
   existing_crossref_results <- read_existing_results(default_crossref_output_file) %>%
-    select(date, keyword, source, link, abstract)
+    select(date, keyword, source, link, abstract, abstract_cs) %>%
+    output_single_abstract()
   readr::write_excel_csv(existing_crossref_results, default_crossref_output_file)
 
   quit(save = "no")
@@ -684,13 +805,15 @@ log_msg("INFO", sprintf("Crossref zaznamu pro samostatny vystup: %d", nrow(cross
 
 final_results <- merge_results(results, default_output_file) %>%
   filter(!str_detect(source, "^Crossref")) %>%
-  select(date, keyword, source, link, abstract)
+  select(date, keyword, source, link, abstract, abstract_cs) %>%
+  output_single_abstract()
 
 readr::write_excel_csv(final_results, default_output_file)
 log_msg("INFO", sprintf("Hotovo. Ulozeno %d zaznamu do %s", nrow(final_results), default_output_file))
 
 final_crossref_results <- merge_results(crossref_results, default_crossref_output_file) %>%
-  select(date, keyword, source, link, abstract)
+  select(date, keyword, source, link, abstract, abstract_cs) %>%
+  output_single_abstract()
 
 readr::write_excel_csv(final_crossref_results, default_crossref_output_file)
 log_msg("INFO", sprintf("Hotovo. Ulozeno %d zaznamu do %s", nrow(final_crossref_results), default_crossref_output_file))
