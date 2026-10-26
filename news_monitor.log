@@ -1,63 +1,60 @@
-[2026-10-26 06:12:02] [INFO] Interval: 2026-10-25 -> 2026-10-26 
-[2026-10-26 06:12:02] [INFO] Pro Crossref bude pouzit kontakt radim.tolasz@chmi.cz 
-[2026-10-26 06:12:02] [INFO] Nacteno 29 klicovych termu v 5 skupinach z keywords.txt 
-[2026-10-26 06:12:02] [INFO] Loading CT24 
-[2026-10-26 06:12:04] [INFO] Loading iDNES 
-[2026-10-26 06:12:05] [INFO] Loading Novinky 
-[2026-10-26 06:12:06] [INFO] Loading Seznam Zpravy 
-[2026-10-26 06:12:08] [INFO] Loading Denik N 
-[2026-10-26 06:12:09] [INFO] Loading Reflex 
-[2026-10-26 06:12:10] [INFO] Loading Respekt 
-[2026-10-26 06:12:12] [WARN] Skipping Respekt - no items found 
-[2026-10-26 06:12:12] [INFO] Loading BBC World 
-[2026-10-26 06:12:12] [INFO] Loading The Guardian World 
-[2026-10-26 06:12:12] [INFO] Loading NYTimes World 
-[2026-10-26 06:12:12] [INFO] Loading NPR World 
-[2026-10-26 06:12:12] [INFO] Loading Al Jazeera 
-[2026-10-26 06:12:13] [INFO] Loading Sky News World 
-[2026-10-26 06:12:13] [INFO] Nacteno celkem 375 zaznamu ze zpravodajskych RSS 
-[2026-10-26 06:12:13] [INFO] Loading Nature Climate 
-[2026-10-26 06:12:13] [INFO] Loading Nature Sustainability 
-[2026-10-26 06:12:13] [INFO] Loading PNAS 
-[2026-10-26 06:12:14] [INFO] Loading ScienceDaily Climate 
-[2026-10-26 06:12:14] [INFO] Loading ScienceDaily Global Warming 
-[2026-10-26 06:12:14] [INFO] Loading ScienceDaily Environmental Issues 
-[2026-10-26 06:12:15] [INFO] Nacteno celkem 305 zaznamu z vedeckych RSS 
-[2026-10-26 06:12:15] [INFO] Crossref query: climate change 
-[2026-10-26 06:12:17] [INFO] Crossref query 'climate change': 56 polozek v odpovedi, 48 polozek po filtraci na datum/link 
-[2026-10-26 06:12:17] [INFO] arXiv query: climate change 
-[2026-10-26 06:13:03] [WARN] arXiv failed for climate change - cannot open the connection 
-[2026-10-26 06:13:03] [INFO] Crossref query: global warming 
-[2026-10-26 06:13:04] [INFO] Crossref query 'global warming': 35 polozek v odpovedi, 28 polozek po filtraci na datum/link 
-[2026-10-26 06:13:04] [INFO] arXiv query: global warming 
-[2026-10-26 06:13:05] [WARN] arXiv failed for global warming - cannot open the connection 
-[2026-10-26 06:13:05] [INFO] Crossref query: climate extremes 
-[2026-10-26 06:13:06] [INFO] Crossref query 'climate extremes': 33 polozek v odpovedi, 27 polozek po filtraci na datum/link 
-[2026-10-26 06:13:06] [INFO] arXiv query: climate extremes 
-[2026-10-26 06:13:52] [WARN] arXiv failed for climate extremes - cannot open the connection 
-[2026-10-26 06:13:52] [INFO] Crossref query: drought 
-[2026-10-26 06:13:52] [INFO] Crossref query 'drought': 7 polozek v odpovedi, 4 polozek po filtraci na datum/link 
-[2026-10-26 06:13:52] [INFO] arXiv query: drought 
-[2026-10-26 06:13:53] [WARN] arXiv failed for drought - cannot open the connection 
-[2026-10-26 06:13:53] [INFO] Crossref query: flood 
-[2026-10-26 06:13:54] [INFO] Crossref query 'flood': 7 polozek v odpovedi, 5 polozek po filtraci na datum/link 
-[2026-10-26 06:13:54] [INFO] arXiv query: flood 
-[2026-10-26 06:16:28] [WARN] arXiv failed for flood - cannot open the connection 
-[2026-10-26 06:16:28] [INFO] Crossref query: heatwave 
-[2026-10-26 06:16:29] [INFO] Crossref query 'heatwave': 0 polozek v odpovedi 
-[2026-10-26 06:16:29] [INFO] arXiv query: heatwave 
-[2026-10-26 06:17:15] [WARN] arXiv failed for heatwave - cannot open the connection 
-[2026-10-26 06:17:15] [INFO] Nacteno celkem 82 zaznamu z vedeckych API 
-[2026-10-26 06:17:15] [INFO] Po filtraci na interval zustalo 333 zaznamu 
-[2026-10-26 06:17:15] [INFO] Po matchi na klicova slova mimo Crossref: 2 zaznamu 
-[2026-10-26 06:17:15] [INFO] Crossref zaznamu pro samostatny vystup: 34 
-[2026-10-26 06:17:15] [INFO] Existujici vystup obsahuje 82 zaznamu 
-[2026-10-26 06:17:15] [INFO] Novy beh vytvoril 2 zaznamu 
-[2026-10-26 06:17:16] [INFO] Po slouceni a deduplikaci je ve vystupu 84 zaznamu 
-[2026-10-26 06:17:16] [INFO] Pribylo 2 novych zaznamu 
-[2026-10-26 06:17:16] [INFO] Hotovo. Ulozeno 84 zaznamu do source.csv 
-[2026-10-26 06:17:16] [INFO] Existujici vystup obsahuje 1364 zaznamu 
-[2026-10-26 06:17:16] [INFO] Novy beh vytvoril 34 zaznamu 
-[2026-10-26 06:17:16] [INFO] Po slouceni a deduplikaci je ve vystupu 1384 zaznamu 
-[2026-10-26 06:17:16] [INFO] Pribylo 20 novych zaznamu 
-[2026-10-26 06:17:16] [INFO] Hotovo. Ulozeno 1384 zaznamu do source-crossref.csv 
+[2026-10-26 06:56:39] [INFO] Interval: 2026-10-25 -> 2026-10-26 
+[2026-10-26 06:56:39] [INFO] Pro Crossref bude pouzit kontakt radim.tolasz@chmi.cz 
+[2026-10-26 06:56:40] [INFO] Preklad: lokalni model EN->CS, bez API klice. Pri prvnim pouziti je potreba stahnout model. 
+[2026-10-26 06:56:40] [INFO] Nacteno 29 klicovych termu v 5 skupinach z keywords.txt 
+[2026-10-26 06:56:40] [INFO] Loading CT24 
+[2026-10-26 06:56:41] [INFO] Loading iDNES 
+[2026-10-26 06:56:43] [INFO] Loading Novinky 
+[2026-10-26 06:56:44] [INFO] Loading Seznam Zpravy 
+[2026-10-26 06:56:45] [INFO] Loading Denik N 
+[2026-10-26 06:56:46] [INFO] Loading Reflex 
+[2026-10-26 06:56:47] [INFO] Loading Respekt 
+[2026-10-26 06:56:48] [WARN] Skipping Respekt - no items found 
+[2026-10-26 06:56:48] [INFO] Loading BBC World 
+[2026-10-26 06:56:48] [INFO] Loading The Guardian World 
+[2026-10-26 06:56:49] [INFO] Loading NYTimes World 
+[2026-10-26 06:56:49] [INFO] Loading NPR World 
+[2026-10-26 06:56:49] [INFO] Loading Al Jazeera 
+[2026-10-26 06:56:50] [INFO] Loading Sky News World 
+[2026-10-26 06:56:50] [INFO] Nacteno celkem 377 zaznamu ze zpravodajskych RSS 
+[2026-10-26 06:56:50] [INFO] Loading Nature Climate 
+[2026-10-26 06:56:50] [INFO] Loading Nature Sustainability 
+[2026-10-26 06:56:51] [INFO] Loading PNAS 
+[2026-10-26 06:56:52] [INFO] Loading ScienceDaily Climate 
+[2026-10-26 06:56:52] [INFO] Loading ScienceDaily Global Warming 
+[2026-10-26 06:56:52] [INFO] Loading ScienceDaily Environmental Issues 
+[2026-10-26 06:56:53] [INFO] Nacteno celkem 305 zaznamu z vedeckych RSS 
+[2026-10-26 06:56:53] [INFO] Crossref query: climate change 
+[2026-10-26 06:56:55] [INFO] Crossref query 'climate change': 70 polozek v odpovedi, 59 polozek po filtraci na datum/link 
+[2026-10-26 06:56:55] [INFO] arXiv query: climate change 
+[2026-10-26 06:56:55] [INFO] Crossref query: global warming 
+[2026-10-26 06:56:57] [INFO] Crossref query 'global warming': 49 polozek v odpovedi, 41 polozek po filtraci na datum/link 
+[2026-10-26 06:56:57] [INFO] arXiv query: global warming 
+[2026-10-26 06:56:58] [INFO] Crossref query: climate extremes 
+[2026-10-26 06:57:00] [INFO] Crossref query 'climate extremes': 40 polozek v odpovedi, 31 polozek po filtraci na datum/link 
+[2026-10-26 06:57:00] [INFO] arXiv query: climate extremes 
+[2026-10-26 06:57:00] [INFO] Crossref query: drought 
+[2026-10-26 06:57:02] [INFO] Crossref query 'drought': 8 polozek v odpovedi, 4 polozek po filtraci na datum/link 
+[2026-10-26 06:57:02] [INFO] arXiv query: drought 
+[2026-10-26 06:57:03] [INFO] Crossref query: flood 
+[2026-10-26 06:57:04] [INFO] Crossref query 'flood': 7 polozek v odpovedi, 5 polozek po filtraci na datum/link 
+[2026-10-26 06:57:04] [INFO] arXiv query: flood 
+[2026-10-26 06:57:05] [INFO] Crossref query: heatwave 
+[2026-10-26 06:57:05] [INFO] Crossref query 'heatwave': 0 polozek v odpovedi 
+[2026-10-26 06:57:05] [INFO] arXiv query: heatwave 
+[2026-10-26 06:57:06] [INFO] Nacteno celkem 104 zaznamu z vedeckych API 
+[2026-10-26 06:57:06] [INFO] Po filtraci na interval zustalo 357 zaznamu 
+[2026-10-26 06:57:06] [INFO] Po matchi na klicova slova mimo Crossref: 1 zaznamu 
+[2026-10-26 06:57:06] [INFO] Crossref zaznamu pro samostatny vystup: 45 
+[2026-10-26 06:57:06] [INFO] Existujici vystup obsahuje 3 zaznamu 
+[2026-10-26 06:57:06] [INFO] Novy beh vytvoril 1 zaznamu 
+[2026-10-26 06:57:06] [INFO] Po slouceni je ve vystupu 3 zaznamu, novych 0 
+[2026-10-26 06:57:06] [INFO] Lokalni preklad: 3 novych unikatnich abstraktu 
+[2026-10-26 06:57:06] [WARN] Lokalni preklad selhal:   File "/home/runner/work/Source/Source/translate_local.py", line 79, in <module> |     main() |   File "/home/runner/work/Source/Source/translate_local.py", line 19, in main |     raise ValueError('Input must be a JSON array of strings') | ValueError: Input must be a JSON array of strings 
+[2026-10-26 06:57:06] [INFO] Hotovo. Ulozeno 3 zaznamu do source.csv 
+[2026-10-26 06:57:06] [INFO] Existujici vystup obsahuje 1384 zaznamu 
+[2026-10-26 06:57:06] [INFO] Novy beh vytvoril 45 zaznamu 
+[2026-10-26 06:57:06] [INFO] Po slouceni je ve vystupu 1395 zaznamu, novych 11 
+[2026-10-26 06:57:06] [INFO] Lokalni preklad: 1014 novych unikatnich abstraktu 
+[2026-10-26 06:57:06] [WARN] Lokalni preklad selhal:   File "/home/runner/work/Source/Source/translate_local.py", line 79, in <module> |     main() |   File "/home/runner/work/Source/Source/translate_local.py", line 19, in main |     raise ValueError('Input must be a JSON array of strings') | ValueError: Input must be a JSON array of strings 
+[2026-10-26 06:57:06] [INFO] Hotovo. Ulozeno 1395 zaznamu do source-crossref.csv 
