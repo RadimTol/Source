@@ -1,0 +1,140 @@
+name: News monitor
+
+permissions:
+  contents: write
+
+env:
+  SCHOLARLY_API_EMAIL: "radim.tolasz@chmi.cz"
+  LOCAL_TRANSLATION_PYTHON: python
+
+on:
+  workflow_dispatch:
+    inputs:
+      date_from:
+        description: "Start date in YYYY-MM-DD"
+        required: false
+      date_to:
+        description: "End date in YYYY-MM-DD"
+        required: false
+  # Four UTC candidates allow 03:10 and 15:10 Prague time across DST.
+  schedule:
+    - cron: '10 1,2,13,14 * * *'
+
+concurrency:
+  group: news-monitor-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check_time:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check Prague time
+        id: check
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          H=$(TZ=Europe/Prague date +%H)
+          echo "Prague hour: $H"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] || [ "$H" = "03" ] || [ "$H" = "15" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping outside 03:00 and 15:00 Europe/Prague."
+          fi
+
+  run:
+    needs: check_time
+    if: needs.check_time.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Cache translation model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-opus-mt-en-cs-v1
+
+      - name: Install system libraries
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev
+
+      - name: Install R packages
+        shell: bash
+        run: |
+          Rscript -e 'install.packages(c(
+            "dplyr", "purrr", "stringr", "readr", "tibble",
+            "xml2", "tidyr", "rvest", "jsonlite"
+          ), repos = "https://cloud.r-project.org")'
+
+      - name: Install local translator
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "transformers>=4.44,<5" sentencepiece sacremoses
+          python -m py_compile translate_local.py
+
+      - name: Run monitor and translations
+        shell: bash
+        env:
+          DATE_FROM: ${{ inputs.date_from }}
+          DATE_TO: ${{ inputs.date_to }}
+        run: |
+          Rscript source.R "$DATE_FROM" "$DATE_TO"
+
+      - name: Show generated files
+        if: always()
+        shell: bash
+        run: |
+          ls -la
+          if [ -f news_monitor.log ]; then tail -n 50 news_monitor.log; fi
+
+      - name: Commit and push results
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source.csv news_monitor.log source-crossref.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Auto-update news monitoring output"
+          for i in 1 2 3; do
+            echo "Push attempt $i..."
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            if git push; then
+              echo "Push succeeded"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Push failed after retries"
+          exit 1
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-monitor-output
+          path: |
+            source.csv
+            source-crossref.csv
+            news_monitor.log
+          if-no-files-found: warn
